@@ -200,7 +200,7 @@ var GateArena = new (function() {
             GG.screen.fillRect(0, 0, GG.screen.canvas.width, GG.screen.canvas.height);
 
             // Draw grid.
-            var gridSize = 24;
+            var gridSize = 42;
             var moveSpeed = gridSize / 4.0;
             var offset = (GG.state.gameTime / 1000) * moveSpeed % gridSize;
 
