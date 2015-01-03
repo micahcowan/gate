@@ -24,18 +24,36 @@ var MajicKeys = new (function() {
         var key = MK.getKey(e);
         var conn = MK.connections[key];
         MK.keys[key] = 1;
+        if (key.length == 1) {
+            MK.keys[key.toLowerCase()] = 1;
+            MK.keys[key.toUpperCase()] = 1;
+        }
     };
 
     MK.handleKeyUp = function(e) {
         var key = MK.getKey(e);
         var conn = MK.connections[key];
         delete MK.keys[key];
+        if (key.length == 1) {
+            delete MK.keys[key.toLowerCase()];
+            delete MK.keys[key.toUpperCase()];
+        }
     };
 
     MK.getKey = function(e) {
         // TODO: This needs lots of testing to handle various key event
         // paradigms.
-        return e.key;
+        var key;
+        if (e.key !== undefined) {
+            key = e.key;
+        }
+        else if (e.keyIdentifier !== undefined) {
+            key = e.keyIdentifier;
+            if (key.substr(0,4) == "U+00" && key.length == 6) {
+                key = String.fromCharCode(("0x" + key.substr(4,2)) - 0);
+            }
+        }
+        return key;
     };
 
     MK.pulse = function(e) {
@@ -60,6 +78,7 @@ var GateArena = new (function() {
         var GS = this;
 
         GS.player = new GA.Player();
+        GS.gameTime = 0;
 
         MajicKeys.connect(
             'a', GS.player.rotateLeft,
@@ -71,6 +90,7 @@ var GateArena = new (function() {
         );
 
         GS.update = function(delta) {
+            GS.gameTime += delta;
             GS.player.update(delta);
         };
     };
@@ -169,15 +189,38 @@ var GateArena = new (function() {
         var GG = this;
         GG.screen = _scr;
 
-        GG.update = function(state) {
+        GG.update = function(state, delta) {
             GG.state = state;
-            GG.drawBackground();
-            GG.drawPlayer();
+            GG.drawBackground(delta);
+            GG.drawPlayer(delta);
         };
 
-        GG.drawBackground = function() {
+        GG.drawBackground = function(delta) {
             GG.screen.fillStyle = "silver";
             GG.screen.fillRect(0, 0, GG.screen.canvas.width, GG.screen.canvas.height);
+
+            // Draw grid.
+            var gridSize = 24;
+            var moveSpeed = gridSize / 4.0;
+            var offset = (GG.state.gameTime / 1000) * moveSpeed % gridSize;
+
+            GG.screen.lineWidth = 1;
+            GG.screen.strokeStyle = "gray";
+            var s = GG.screen;
+            var width = s.canvas.width;
+            var height = s.canvas.height;
+            for (var x = offset; x < width; x += gridSize) {
+                s.beginPath();
+                s.moveTo(x,0);
+                s.lineTo(x,height);
+                s.stroke();
+            }
+            for (var y = offset; y < height; y += gridSize) {
+                s.beginPath();
+                s.moveTo(0,y);
+                s.lineTo(width,y);
+                s.stroke();
+            }
         };
 
         GG.drawPlayer = function() {
@@ -229,7 +272,7 @@ var GateArena = new (function() {
 
         MajicKeys.pulse();
         GA.state.update(delta);
-        GA.graphics.update(GA.state);
+        GA.graphics.update(GA.state, delta);
 
         window.setTimeout(GA.update, GA.msecsPerFrame);
     };
