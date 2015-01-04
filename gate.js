@@ -196,6 +196,7 @@ var GateArena = new (function() {
             }
             else {
                 GS.shot = new GS.Shot(GS.player, GS.gameTime);
+                createjs.Sound.play('shot');
             }
         };
 
@@ -409,6 +410,8 @@ var GateArena = new (function() {
 
     // GateArena functions
     GA.init = function() {
+        createjs.Sound.registerSound("shot.ogg", 'shot');
+
         GA.screen = document.getElementById('game').getContext('2d');
         GA.width = 640;
         GA.height = 480;
