@@ -4,6 +4,8 @@ var MajicKeys = new (function() {
     var MK = this;
 
     MK.connections = {};
+    MK.downs = {};
+    MK.ups = {};
     MK.keys = {};
 
     MK.connect = function() {
@@ -17,27 +19,59 @@ var MajicKeys = new (function() {
         }
     };
 
-    MK.handleKeyDown = function(e) {
-        var key = MK.getKey(e);
-        var conn = MK.connections[key];
-        MK.keys[key] = 1;
-        if (key.length == 1) {
-            MK.keys[key.toLowerCase()] = 1;
-            MK.keys[key.toUpperCase()] = 1;
+    MK.onDown = function() {
+        var alen = arguments.length;
+        if (alen % 2 == 1) { --alen; }
+        for (var i=0; i < alen; i += 2) {
+            var key = arguments[i];
+            var fn = arguments[i+1];
+
+            MK.downs[key] = fn;
         }
+    };
+
+    MK.onUp = function() {
+        var alen = arguments.length;
+        if (alen % 2 == 1) { --alen; }
+        for (var i=0; i < alen; i += 2) {
+            var key = arguments[i];
+            var fn = arguments[i+1];
+
+            MK.ups[key] = fn;
+        }
+    };
+
+    MK.handleKeyDown = function(e) {
+        var keys = MK.getKeys(e);
+
+        for (var i = 0; i < keys.length; ++i) {
+            var k = keys[i]
+            MK.keys[k] = 1;
+            if (MK.downs[k] !== undefined) MK.downs[k](e);
+        }
+
+        MK.maybeContinue(keys, e);
     };
 
     MK.handleKeyUp = function(e) {
-        var key = MK.getKey(e);
-        var conn = MK.connections[key];
-        delete MK.keys[key];
-        if (key.length == 1) {
-            delete MK.keys[key.toLowerCase()];
-            delete MK.keys[key.toUpperCase()];
+        var keys = MK.getKeys(e);
+
+        for (var i = 0; i < keys.length; ++i) {
+            var k = keys[i]
+            delete MK.keys[k]
+            if (MK.ups[k] !== undefined) MK.ups[k](e);
+        }
+
+        MK.maybeContinue(keys, e);
+    };
+
+    MK.maybeContinue = function(key, e) {
+        if (!(key.altKey || key.ctrlKey || key.metaKey)) {
+            e.preventDefault();
         }
     };
 
-    MK.getKey = function(e) {
+    MK.getKeys = function(e) {
         // TODO: This needs lots of testing to handle various key event
         // paradigms.
         var key;
@@ -50,7 +84,20 @@ var MajicKeys = new (function() {
                 key = String.fromCharCode(("0x" + key.substr(4,2)) - 0);
             }
         }
-        return key;
+
+        var keys = [];
+        if (key == ' ' || key == 'Space') {
+            keys.push(' ');
+            keys.push('Space');
+        }
+        else if (key.length == 1 && key.toLowerCase() != key.toUpperCase()) {
+            keys.push(key.toLowerCase());
+            keys.push(key.toUpperCase());
+        }
+        else {
+            keys.push(key);
+        }
+        return keys;
     };
 
     MK.pulse = function(e) {
@@ -139,8 +186,12 @@ var GateArena = new (function() {
         };
 
         GS.fire = function() {
-            if (!GS.shot.fired)
+            if (GS.shot.fired) {
+                GS.shot.recall();
+            }
+            else {
                 GS.shot = new GS.Shot(GS.player, GS.gameTime);
+            }
         };
 
         GS.player = new GA.Player();
@@ -150,11 +201,13 @@ var GateArena = new (function() {
         MajicKeys.connect(
             'a', GS.player.rotateLeft,
             'd', GS.player.rotateRight,
-            'j', GS.fire,
             'w', GS.player.doThrust,
             's', GS.player.doReverse,
             'q', GS.player.moveLeft,
             'e', GS.player.moveRight
+        );
+        MajicKeys.onDown(
+            'Space', GS.fire
         );
     };
 
