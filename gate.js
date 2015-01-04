@@ -192,7 +192,9 @@ var GateArena = new (function() {
 
         GS.fire = function() {
             if (GS.shot.fired) {
-                GS.shot.recall();
+                if (GS.shot.outgoing) {
+                    GS.shot.recall();
+                }
             }
             else {
                 GS.shot = new GS.Shot(GS.player, GS.gameTime);
