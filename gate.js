@@ -15,9 +15,6 @@ var MajicKeys = new (function() {
 
             MK.connections[key] = fn;
         }
-
-        window.addEventListener('keydown', MK.handleKeyDown);
-        window.addEventListener('keyup', MK.handleKeyUp);
     };
 
     MK.handleKeyDown = function(e) {
@@ -64,6 +61,9 @@ var MajicKeys = new (function() {
             }
         }
     };
+
+    window.addEventListener('keydown', MK.handleKeyDown);
+    window.addEventListener('keyup', MK.handleKeyUp);
 })();
 
 var GateArena = new (function() {
@@ -73,26 +73,69 @@ var GateArena = new (function() {
     GA.PLAYER_MAX_VELOCITY = 6;
     GA.FRICTION = 2.0;
     GA.PLAYER_THRUST = 4 + GA.FRICTION;
+    GA.SHOT_SPEED = 6;
 
     GA.GameState = function() {
         var GS = this;
 
+        // Used for shot = "null", without having to check for safety
+        GS.nullShot = {
+            update: function() {},
+            fired: false
+        };
+
+        GS.Shot = function(player, time) {
+            var S = this;
+            this.x = player.x;
+            this.y = player.y;
+
+            // XXX For now. Later we'll just use the direction, and a
+            // constant speed, not based on player's.
+            var dir = player.rot;
+            this.h = GA.SHOT_SPEED * Math.sin(dir);
+            this.v = -GA.SHOT_SPEED * Math.cos(dir);
+
+            this.time = time;
+        };
+        GS.Shot.prototype = {
+            fired: true,
+            update: function(delta) {
+                this.x += this.h;
+                this.y += this.v;
+            }
+        };
+
+        GS.update = function(delta) {
+            GS.gameTime += delta;
+            GS.player.update(delta);
+            GS.shot.update(delta);
+            if (   GS.shot.x < 0
+                || GS.shot.x > GA.width
+                || GS.shot.y < 0
+                || GS.shot.y > GA.height) {
+
+                GS.shot = GS.nullShot;
+            }
+        };
+
+        GS.fire = function() {
+            if (!GS.shot.fired)
+                GS.shot = new GS.Shot(GS.player, GS.gameTime);
+        };
+
         GS.player = new GA.Player();
+        GS.shot = GS.nullShot;
         GS.gameTime = 0;
 
         MajicKeys.connect(
             'a', GS.player.rotateLeft,
             'd', GS.player.rotateRight,
+            'j', GS.fire,
             'w', GS.player.doThrust,
             's', GS.player.doReverse,
             'q', GS.player.moveLeft,
             'e', GS.player.moveRight
         );
-
-        GS.update = function(delta) {
-            GS.gameTime += delta;
-            GS.player.update(delta);
-        };
     };
 
     GA.Player = function() {
@@ -138,8 +181,8 @@ var GateArena = new (function() {
                 Plyr.x = -Plyr.x;
                 Plyr.h = -Plyr.h;
             }
-            else if (Plyr.x > GA.screen.canvas.width) {
-                Plyr.x -= 2 * (Plyr.x - GA.screen.canvas.width);
+            else if (Plyr.x > GA.width) {
+                Plyr.x -= 2 * (Plyr.x - GA.width);
                 Plyr.h = -Plyr.h;
             }
 
@@ -147,8 +190,8 @@ var GateArena = new (function() {
                 Plyr.y = -Plyr.y;
                 Plyr.v = -Plyr.v;
             }
-            else if (Plyr.y > GA.screen.canvas.height) {
-                Plyr.y -= 2 * (Plyr.y - GA.screen.canvas.height);
+            else if (Plyr.y > GA.height) {
+                Plyr.y -= 2 * (Plyr.y - GA.height);
                 Plyr.v = -Plyr.v;
             }
 
@@ -192,6 +235,7 @@ var GateArena = new (function() {
         GG.update = function(state, delta) {
             GG.state = state;
             GG.drawBackground(delta);
+            GG.drawShot(delta);
             GG.drawPlayer(delta);
         };
 
@@ -221,6 +265,16 @@ var GateArena = new (function() {
                 s.lineTo(width,y);
                 s.stroke();
             }
+        };
+
+        GG.drawShot = function(delta) {
+            var scr = GG.screen;
+            var shot = GG.state.shot;
+            if (!shot.fired) return;
+            scr.beginPath();
+            scr.fillStyle = "blue";
+            scr.arc(shot.x, shot.y, 3, 0, 2 * Math.PI);
+            scr.fill();
         };
 
         GG.drawPlayer = function() {
@@ -254,6 +308,8 @@ var GateArena = new (function() {
     // GateArena functions
     GA.init = function() {
         GA.screen = document.getElementById('game').getContext('2d');
+        GA.width = 640;
+        GA.height = 480;
 
         GA.graphics = new GA.GameGraphics(GA.screen);
         GA.state = new GA.GameState();
