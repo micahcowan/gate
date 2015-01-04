@@ -271,9 +271,18 @@ var GateArena = new (function() {
             var scr = GG.screen;
             var shot = GG.state.shot;
             if (!shot.fired) return;
+
+            var r = 4; // default bullet radius.
+            var maxR = 7; // max bullet radius.
+            var shrinkT = 500; // Time (msecs) it takes to shrink from max to default
+
+            if (GG.state.gameTime - shot.time < shrinkT) {
+                r += ((shrinkT - (GG.state.gameTime - shot.time))/shrinkT) * (maxR - r);
+            }
+
             scr.beginPath();
-            scr.fillStyle = "blue";
-            scr.arc(shot.x, shot.y, 3, 0, 2 * Math.PI);
+            scr.fillStyle = "red";
+            scr.arc(shot.x, shot.y, r, 0, 2 * Math.PI);
             scr.fill();
         };
 
@@ -299,7 +308,8 @@ var GateArena = new (function() {
             s.lineWidth = 2;
             s.lineJoin = "miter";
             s.fillStyle = "red";
-            s.fill();
+            if (!GG.state.shot.fired)
+                s.fill();
             s.stroke();
             s.restore();
         };
