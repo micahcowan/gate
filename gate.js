@@ -322,8 +322,15 @@ var GateArena = new (function() {
             GG.drawPlayer(delta);
         };
 
+        GG.shadow = function() {
+            GG.screen.shadowColor = 'rgba(0,0,0,0.3)';
+            GG.screen.shadowOffsetX = 5;
+            GG.screen.shadowOffsetY = 5;
+            GG.screen.shadowBlur = 7;
+        };
+
         GG.drawBackground = function(delta) {
-            GG.screen.fillStyle = "silver";
+            GG.screen.fillStyle = "#EEE";
             GG.screen.fillRect(0, 0, GG.screen.canvas.width, GG.screen.canvas.height);
 
             // Draw grid.
@@ -332,7 +339,8 @@ var GateArena = new (function() {
             var offset = (GG.state.gameTime / 1000) * moveSpeed % gridSize;
 
             GG.screen.lineWidth = 1;
-            GG.screen.strokeStyle = "gray";
+            GG.screen.strokeStyle = "#C0C0D0";
+
             var s = GG.screen;
             var width = s.canvas.width;
             var height = s.canvas.height;
@@ -376,7 +384,10 @@ var GateArena = new (function() {
             scr.beginPath();
             scr.fillStyle = "red";
             scr.arc(shot.x, shot.y, r, 0, 2 * Math.PI);
+            scr.save();
+            GG.shadow();
             scr.fill();
+            scr.restore();
         };
 
         GG.drawPlayer = function() {
@@ -401,8 +412,15 @@ var GateArena = new (function() {
             s.lineWidth = 2;
             s.lineJoin = "miter";
             s.fillStyle = "red";
-            if (!GG.state.shot.fired)
+            if (!GG.state.shot.fired) {
+                s.save();
+                GG.shadow();
                 s.fill();
+                s.restore();
+            }
+            else {
+                GG.shadow();
+            }
             s.stroke();
             s.restore();
         };
