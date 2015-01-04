@@ -165,6 +165,7 @@ var GateArena = new (function() {
             },
             recall: function(delta) {
                 // Shot being recalled to ship.
+                this.time = GS.gameTime;
                 this.update = this.returnUpdate;
                 this.outgoing = false;
             },
@@ -355,13 +356,20 @@ var GateArena = new (function() {
 
             var r = 4; // default bullet radius.
             var maxR = 7; // max bullet radius.
-            var shrinkT = 500; // Time (msecs) it takes to shrink from max to default
+            var shrinkT = 333; // Time (msecs) it takes to shrink from max to default
 
-            if (!shot.outgoing) {
-                r = maxR;
+            var slide = 0;
+            if (GG.state.gameTime - shot.time < shrinkT) {
+                slide = (GG.state.gameTime - shot.time)/shrinkT;
+                if (shot.outgoing) {
+                    r += (1.0 - slide) * (maxR - r);
+                }
+                else {
+                    r += slide * (maxR - r);
+                }
             }
-            else if (GG.state.gameTime - shot.time < shrinkT) {
-                r += ((shrinkT - (GG.state.gameTime - shot.time))/shrinkT) * (maxR - r);
+            else if (!shot.outgoing) {
+                r = maxR;
             }
 
             scr.beginPath();
