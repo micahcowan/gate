@@ -71,9 +71,11 @@ var GateArena = new (function() {
 
     GA.PLAYER_ROTATE_SPEED = Math.PI;
     GA.PLAYER_MAX_VELOCITY = 6;
+    GA.PLAYER_RADIUS = 8;
     GA.FRICTION = 2.0;
     GA.PLAYER_THRUST = 4 + GA.FRICTION;
     GA.SHOT_SPEED = 6;
+    GA.SHOT_RETURN_SPEED = 4;
 
     GA.GameState = function() {
         var GS = this;
@@ -99,10 +101,22 @@ var GateArena = new (function() {
         };
         GS.Shot.prototype = {
             fired: true,
+            outgoing: true,
             update: function(delta) {
                 this.x += this.h;
                 this.y += this.v;
-            }
+            },
+            returnUpdate: function(delta) {
+                // Swapped out for update() when returning.
+                var dir = Math.atan2(GS.player.x - this.x, GS.player.y - this.y);
+                this.x += GA.SHOT_RETURN_SPEED * Math.sin(dir);
+                this.y += GA.SHOT_RETURN_SPEED * Math.cos(dir);
+            },
+            recall: function(delta) {
+                // Shot being recalled to ship.
+                this.update = this.returnUpdate;
+                this.outgoing = false;
+            },
         };
 
         GS.update = function(delta) {
@@ -113,6 +127,12 @@ var GateArena = new (function() {
                 || GS.shot.x > GA.width
                 || GS.shot.y < 0
                 || GS.shot.y > GA.height) {
+
+                GS.shot.recall();
+            }
+            if (!GS.shot.outgoing
+                && Math.abs(GS.shot.x - GS.player.x) <= GA.PLAYER_RADIUS
+                && Math.abs(GS.shot.y - GS.player.y) <= GA.PLAYER_RADIUS) {
 
                 GS.shot = GS.nullShot;
             }
@@ -276,7 +296,10 @@ var GateArena = new (function() {
             var maxR = 7; // max bullet radius.
             var shrinkT = 500; // Time (msecs) it takes to shrink from max to default
 
-            if (GG.state.gameTime - shot.time < shrinkT) {
+            if (!shot.outgoing) {
+                r = maxR;
+            }
+            else if (GG.state.gameTime - shot.time < shrinkT) {
                 r += ((shrinkT - (GG.state.gameTime - shot.time))/shrinkT) * (maxR - r);
             }
 
