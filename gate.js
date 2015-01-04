@@ -66,7 +66,7 @@ var MajicKeys = new (function() {
     };
 
     MK.maybeContinue = function(key, e) {
-        if (!(key.altKey || key.ctrlKey || key.metaKey)) {
+        if (!(e.altKey || e.ctrlKey || e.metaKey)) {
             e.preventDefault();
         }
     };
@@ -89,6 +89,10 @@ var MajicKeys = new (function() {
         if (key == ' ' || key == 'Space') {
             keys.push(' ');
             keys.push('Space');
+        }
+        else if (key == 'Up' || key == 'Down' || key == 'Left'
+                 || key == 'Right') {
+            keys.push('Arrow' + key);
         }
         else if (key.length == 1 && key.toLowerCase() != key.toUpperCase()) {
             keys.push(key.toLowerCase());
@@ -203,6 +207,10 @@ var GateArena = new (function() {
             'd', GS.player.rotateRight,
             'w', GS.player.doThrust,
             's', GS.player.doReverse,
+            'ArrowLeft', GS.player.rotateLeft,
+            'ArrowRight', GS.player.rotateRight,
+            'ArrowUp', GS.player.doThrust,
+            'ArrowDown', GS.player.doReverse,
             'q', GS.player.moveLeft,
             'e', GS.player.moveRight
         );
