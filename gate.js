@@ -171,6 +171,11 @@ var GateArena = new (function() {
             },
         };
 
+        GS.Gate = function(x, y) {
+            this.x = x;
+            this.y = y;
+        };
+
         GS.update = function(delta) {
             GS.gameTime += delta;
             GS.player.update(delta);
@@ -205,6 +210,38 @@ var GateArena = new (function() {
         GS.player = new GA.Player();
         GS.shot = GS.nullShot;
         GS.gameTime = 0;
+
+        GS.gates = [];
+        var gXOff = GA.width/4;
+        var gYOff = GA.height/4;
+        var gPos = [
+            [
+                  [gXOff, 2*gXOff, 3*gXOff]
+                , [0]
+            ]
+          , [
+                  [GA.width]
+                , [gYOff, 2*gYOff, 3*gYOff]
+            ]
+          , [
+                  [gXOff, 2*gXOff, 3*gXOff]
+                , [GA.height]
+            ]
+          , [
+                  [0]
+                , [gYOff, 2*gYOff, 3*gYOff]
+            ]
+        ];
+        for (var i=0; i < gPos.length; ++i) {
+            var comb = gPos[i];
+            var xs = comb[0];
+            var ys = comb[1];
+            for (var j=0; j < xs.length; ++j) {
+                for (var k=0; k < ys.length; ++k) {
+                    GS.gates.push(new GS.Gate(xs[j], ys[k]));
+                }
+            }
+        }
 
         MajicKeys.connect(
             'a', GS.player.rotateLeft,
@@ -320,6 +357,9 @@ var GateArena = new (function() {
         GG.update = function(state, delta) {
             GG.state = state;
             GG.drawBackground(delta);
+            for (var i=0; i < state.gates.length; ++i) {
+                GG.drawGate(state.gates[i]);
+            }
             GG.drawShot(delta);
             GG.drawPlayer(delta);
         };
@@ -331,6 +371,50 @@ var GateArena = new (function() {
             GG.screen.shadowBlur = 7;
         };
 
+        GG.drawGate = function(gate) {
+            var scr = GG.screen;
+
+            var x = gate.x;
+            var y = gate.y;
+
+            var w = 64;
+            var x0 = x - w/2;
+            var y0 = y - w/2;
+            var r = 3;
+            var rSpeed = 500; //msecs
+            var r2 = w * 0.5;
+            var minStop = 0.5;
+            var maxStop = 1.0;
+
+            var slide = Math.abs(GG.state.gameTime % (rSpeed * 2) - rSpeed) / rSpeed;
+            var stop = minStop + (maxStop - minStop) * slide;
+
+            /*
+            var grad = scr.createRadialGradient(
+                x0 + w/2,
+                -8,
+                r,
+                x0 + w/2,
+                -2,
+                r2);
+                */
+            var grad = scr.createRadialGradient(
+                x,
+                y,
+                r,
+                x,
+                y,
+                r2);
+
+            grad.addColorStop(0, 'rgb(128,226,240)');
+            grad.addColorStop(stop, 'rgba(128,226,240,0)');
+            //grad.addColorStop(1, 'red');
+
+            scr.fillStyle = grad;
+            //scr.fillStyle = 'red';
+            scr.fillRect(x0, y0, w, w);
+        };
+
         GG.drawBackground = function(delta) {
             GG.screen.fillStyle = "#EEE";
             GG.screen.fillRect(0, 0, GG.screen.canvas.width, GG.screen.canvas.height);
@@ -338,7 +422,7 @@ var GateArena = new (function() {
             // Draw grid.
             var gridSize = 42;
             var moveSpeed = gridSize / 4.0;
-            var offset = (GG.state.gameTime / 1000) * moveSpeed % gridSize;
+            var offset = (new Date() / 1000) * moveSpeed % gridSize;
 
             GG.screen.lineWidth = 1;
             GG.screen.strokeStyle = "#C0C0D0";
