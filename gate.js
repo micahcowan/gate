@@ -127,6 +127,7 @@ var GateArena = new (function() {
     GA.PLAYER_THRUST = 4 + GA.FRICTION;
     GA.SHOT_SPEED = 6;
     GA.SHOT_RETURN_SPEED = 4;
+    GA.GATE_WIDTH = 64;
 
     GA.GameState = function() {
         var GS = this;
@@ -174,6 +175,51 @@ var GateArena = new (function() {
         GS.Gate = function(x, y) {
             this.x = x;
             this.y = y;
+            this.open = true;
+            this.locked = false;
+
+            this.opposingX = x;
+            this.opposingY = y;
+            if (x == 0) {
+                this.opposingX = GA.width;
+            }
+            else if (x == GA.width) {
+                this.opposingX = 0;
+            }
+            else if (y == 0) {
+                this.opposingY = GA.height;
+            }
+            else if (y == GA.height) {
+                this.opposingY = 0;
+            }
+        };
+        GS.Gate.prototype = {
+            checkCollision: function(x, y) {
+                if (!this.open) return false;
+                if (this.x == 0) {
+                    return (x <= this.x
+                            && y > this.y - GA.GATE_WIDTH/2
+                            && y < this.y + GA.GATE_WIDTH/2);
+                }
+                else if (this.x == GA.width) {
+                    return (x >= this.x
+                            && y > this.y - GA.GATE_WIDTH/2
+                            && y < this.y + GA.GATE_WIDTH/2);
+                }
+                else if (this.y == 0) {
+                    return (y <= this.y
+                            && x > this.x - GA.GATE_WIDTH/2
+                            && x < this.x + GA.GATE_WIDTH/2);
+                }
+                else if (this.y == GA.height) {
+                    return (y >= this.y
+                            && x > this.x - GA.GATE_WIDTH/2
+                            && x < this.x + GA.GATE_WIDTH/2);
+                }
+            }
+          , lock: function() {
+                this.locked = true;
+            }
         };
 
         GS.update = function(delta) {
@@ -185,6 +231,14 @@ var GateArena = new (function() {
                 || GS.shot.y < 0
                 || GS.shot.y > GA.height) {
 
+                // Player bullet hit a wall.
+                // First, check if we hit any gates.
+                for (var i=0; i < GS.gates.length; ++i) {
+                    if (GS.gates[i].checkCollision(GS.shot.x, GS.shot.y)) {
+                        GS.gates[i].lock();
+                        break;
+                    }
+                }
                 GS.shot.recall();
             }
             if (!GS.shot.outgoing
@@ -377,11 +431,11 @@ var GateArena = new (function() {
             var x = gate.x;
             var y = gate.y;
 
-            var w = 64;
+            var w = GA.GATE_WIDTH;
             var x0 = x - w/2;
             var y0 = y - w/2;
             var r = 3;
-            var rSpeed = 500; //msecs
+            var rSpeed = gate.locked? 1000 : 500; //msecs
             var r2 = w * 0.5;
             var minStop = 0.5;
             var maxStop = 1.0;
@@ -406,8 +460,14 @@ var GateArena = new (function() {
                 y,
                 r2);
 
-            grad.addColorStop(0, 'rgb(128,226,240)');
-            grad.addColorStop(stop, 'rgba(128,226,240,0)');
+            var color1 = 'rgb(128,226,240)';
+            var color2 = 'rgba(128,226,240,0)'
+            if (gate.locked) {
+                color1 = 'rgb(0,220,180)';
+                color2 = 'rgba(0,220,180,0)'
+            }
+            grad.addColorStop(0, color1);
+            grad.addColorStop(stop, color2);
             //grad.addColorStop(1, 'red');
 
             scr.fillStyle = grad;
