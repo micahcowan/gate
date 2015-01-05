@@ -222,6 +222,131 @@ var GateArena = new (function() {
             }
         };
 
+        GS.Player = function() {
+            var Plyr = this;
+            Plyr.x = 320;
+            Plyr.y = 240;
+            Plyr.h = 0;
+            Plyr.v = 0;
+            Plyr.rot = 0;
+            Plyr.rotDir = 0;
+            Plyr.thrust = 0;
+            Plyr.thrustDir = 0;
+
+            Plyr.update = function(delta) {
+                var rd = Plyr.rotDir;
+                var step = delta/1000.0;
+                Plyr.rot += rd * GA.PLAYER_ROTATE_SPEED * step;
+
+                Plyr.h += Plyr.thrust * step * GA.PLAYER_THRUST * Math.sin(Plyr.rot + Plyr.thrustDir);
+                Plyr.v -= Plyr.thrust * step * GA.PLAYER_THRUST * Math.cos(Plyr.rot + Plyr.thrustDir);
+                // What's the total speed now?
+                var value = Math.sqrt(Math.abs(Plyr.h * Plyr.h) + Math.abs(Plyr.v * Plyr.v));
+                var newValue = value - GA.FRICTION * step;
+                if (newValue > 0) {
+                    // Apply friction.
+                    // Apply max;
+                    if (newValue > GA.PLAYER_MAX_VELOCITY) {
+                        newValue = GA.PLAYER_MAX_VELOCITY;
+                    }
+                    var scale = newValue / value;
+                    Plyr.h *= scale;
+                    Plyr.v *= scale;
+                } else {
+                    Plyr.h = 0;
+                    Plyr.v = 0;
+                }
+
+                Plyr.x += Plyr.h;
+                Plyr.y += Plyr.v;
+
+                // Handle bouncing.
+                var bounced = false;
+                var newX = Plyr.x;
+                var newY = Plyr.y;
+                var newH = Plyr.h;
+                var newV = Plyr.v;
+                if (Plyr.x < 0) {
+                    bounced = true;
+                    newX = -Plyr.x;
+                    newH = -Plyr.h;
+                }
+                else if (Plyr.x > GA.width) {
+                    bounced = true;
+                    newX -= 2 * (Plyr.x - GA.width);
+                    newH = -Plyr.h;
+                }
+
+                if (Plyr.y < 0) {
+                    bounced = true;
+                    newY = -Plyr.y;
+                    newV = -Plyr.v;
+                }
+                else if (Plyr.y > GA.height) {
+                    bounced = true;
+                    newY -= 2 * (Plyr.y - GA.height);
+                    newV = -Plyr.v;
+                }
+
+                if (bounced) {
+                    var portaled = false;
+
+                    for (var i=0; i < GS.gates.length; ++i) {
+                        var gate = GS.gates[i];
+                        var j = (i + 6) % GS.gates.length; //opposing gate's index
+                        if (gate.checkCollision(Plyr.x, Plyr.y)) {
+                            gate.lock();
+                            var og = GS.gates[j]; //opposing gate
+                            if (og.open) {
+                                og.lock();
+                                newX = gate.opposingX;
+                                newY = gate.opposingY;
+                                newH = Plyr.h;
+                                newV = Plyr.v;
+                            }
+                            break;
+                        }
+                    }
+
+                    Plyr.x = newX;
+                    Plyr.y = newY;
+                    Plyr.h = newH;
+                    Plyr.v = newV;
+                }
+
+                Plyr.rotDir = 0;
+                Plyr.thrust = 0;
+                Plyr.thrustDir = 0;
+            };
+
+            Plyr.rotateLeft = function(e) {
+                Plyr.rotDir = -1;
+            };
+
+            Plyr.rotateRight = function(e) {
+                Plyr.rotDir = 1;
+            };
+
+            Plyr.doThrust = function(e) {
+                Plyr.thrust = 1;
+            };
+
+            Plyr.doReverse = function(e) {
+                Plyr.thrust = 1;
+                Plyr.thrustDir = Math.PI;
+            };
+
+            Plyr.moveLeft = function(e) {
+                Plyr.thrust = 1;
+                Plyr.thrustDir = -Math.PI/2
+            };
+
+            Plyr.moveRight = function(e) {
+                Plyr.thrust = 1;
+                Plyr.thrustDir = Math.PI/2
+            };
+        };
+
         GS.update = function(delta) {
             GS.gameTime += delta;
             GS.player.update(delta);
@@ -261,7 +386,7 @@ var GateArena = new (function() {
             }
         };
 
-        GS.player = new GA.Player();
+        GS.player = new GS.Player();
         GS.shot = GS.nullShot;
         GS.gameTime = 0;
 
@@ -312,96 +437,6 @@ var GateArena = new (function() {
         MajicKeys.onDown(
             'Space', GS.fire
         );
-    };
-
-    GA.Player = function() {
-        var Plyr = this;
-        Plyr.x = 320;
-        Plyr.y = 240;
-        Plyr.h = 0;
-        Plyr.v = 0;
-        Plyr.rot = 0;
-        Plyr.rotDir = 0;
-        Plyr.thrust = 0;
-        Plyr.thrustDir = 0;
-
-        Plyr.update = function(delta) {
-            var rd = Plyr.rotDir;
-            var step = delta/1000.0;
-            Plyr.rot += rd * GA.PLAYER_ROTATE_SPEED * step;
-
-            Plyr.h += Plyr.thrust * step * GA.PLAYER_THRUST * Math.sin(Plyr.rot + Plyr.thrustDir);
-            Plyr.v -= Plyr.thrust * step * GA.PLAYER_THRUST * Math.cos(Plyr.rot + Plyr.thrustDir);
-            // What's the total speed now?
-            var value = Math.sqrt(Math.abs(Plyr.h * Plyr.h) + Math.abs(Plyr.v * Plyr.v));
-            var newValue = value - GA.FRICTION * step;
-            if (newValue > 0) {
-                // Apply friction.
-                // Apply max;
-                if (newValue > GA.PLAYER_MAX_VELOCITY) {
-                    newValue = GA.PLAYER_MAX_VELOCITY;
-                }
-                var scale = newValue / value;
-                Plyr.h *= scale;
-                Plyr.v *= scale;
-            } else {
-                Plyr.h = 0;
-                Plyr.v = 0;
-            }
-
-            Plyr.x += Plyr.h;
-            Plyr.y += Plyr.v;
-
-            // Handle bouncing.
-            if (Plyr.x < 0) {
-                Plyr.x = -Plyr.x;
-                Plyr.h = -Plyr.h;
-            }
-            else if (Plyr.x > GA.width) {
-                Plyr.x -= 2 * (Plyr.x - GA.width);
-                Plyr.h = -Plyr.h;
-            }
-
-            if (Plyr.y < 0) {
-                Plyr.y = -Plyr.y;
-                Plyr.v = -Plyr.v;
-            }
-            else if (Plyr.y > GA.height) {
-                Plyr.y -= 2 * (Plyr.y - GA.height);
-                Plyr.v = -Plyr.v;
-            }
-
-            Plyr.rotDir = 0;
-            Plyr.thrust = 0;
-            Plyr.thrustDir = 0;
-        };
-
-        Plyr.rotateLeft = function(e) {
-            Plyr.rotDir = -1;
-        };
-
-        Plyr.rotateRight = function(e) {
-            Plyr.rotDir = 1;
-        };
-
-        Plyr.doThrust = function(e) {
-            Plyr.thrust = 1;
-        };
-
-        Plyr.doReverse = function(e) {
-            Plyr.thrust = 1;
-            Plyr.thrustDir = Math.PI;
-        };
-
-        Plyr.moveLeft = function(e) {
-            Plyr.thrust = 1;
-            Plyr.thrustDir = -Math.PI/2
-        };
-
-        Plyr.moveRight = function(e) {
-            Plyr.thrust = 1;
-            Plyr.thrustDir = Math.PI/2
-        };
     };
 
     GA.GameGraphics = function(_scr) {
