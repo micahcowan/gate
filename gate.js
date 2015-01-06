@@ -304,10 +304,17 @@ var GateArena = new (function() {
                                 newY = gate.opposingY;
                                 newH = Plyr.h;
                                 newV = Plyr.v;
-                                createjs.Sound.play('gate');
+                                portaled = true;
                             }
                             break;
                         }
+                    }
+
+                    if (portaled) {
+                        createjs.Sound.play('gate');
+                    }
+                    else {
+                        createjs.Sound.play('bounce');
                     }
 
                     Plyr.x = newX;
@@ -612,6 +619,7 @@ var GateArena = new (function() {
     // GateArena functions
     GA.init = function() {
         createjs.Sound.registerSound("shot.ogg", 'shot');
+        createjs.Sound.registerSound("clink.ogg", 'bounce');
         createjs.Sound.registerSound("gate.ogg", 'gate');
 
         GA.screen = document.getElementById('game').getContext('2d');
