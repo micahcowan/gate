@@ -381,6 +381,7 @@ var GateArena = new (function() {
                 && Math.abs(GS.shot.x - GS.player.x) <= GA.PLAYER_RADIUS
                 && Math.abs(GS.shot.y - GS.player.y) <= GA.PLAYER_RADIUS) {
 
+                createjs.Sound.play('slurp');
                 GS.shot = GS.nullShot;
             }
         };
@@ -624,6 +625,7 @@ var GateArena = new (function() {
         createjs.Sound.registerSound("clink.ogg", 'bounce');
         createjs.Sound.registerSound("gate.ogg", 'gate');
         createjs.Sound.registerSound("knock.ogg", 'knock');
+        createjs.Sound.registerSound("slurp.ogg", 'slurp');
 
         GA.screen = document.getElementById('game').getContext('2d');
         GA.width = 640;
