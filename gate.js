@@ -289,6 +289,7 @@ var GateArena = new (function() {
                 }
 
                 if (bounced) {
+                    // Double check we didn't just pass through a gate.
                     var portaled = false;
 
                     for (var i=0; i < GS.gates.length; ++i) {
@@ -303,6 +304,7 @@ var GateArena = new (function() {
                                 newY = gate.opposingY;
                                 newH = Plyr.h;
                                 newV = Plyr.v;
+                                createjs.Sound.play('gate');
                             }
                             break;
                         }
@@ -610,6 +612,7 @@ var GateArena = new (function() {
     // GateArena functions
     GA.init = function() {
         createjs.Sound.registerSound("shot.ogg", 'shot');
+        createjs.Sound.registerSound("gate.ogg", 'gate');
 
         GA.screen = document.getElementById('game').getContext('2d');
         GA.width = 640;
