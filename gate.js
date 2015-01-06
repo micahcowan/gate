@@ -373,6 +373,8 @@ var GateArena = new (function() {
                         break;
                     }
                 }
+                if (GS.shot.outgoing)
+                    createjs.Sound.play('knock');
                 GS.shot.recall();
             }
             if (!GS.shot.outgoing
@@ -621,6 +623,7 @@ var GateArena = new (function() {
         createjs.Sound.registerSound("shot.ogg", 'shot');
         createjs.Sound.registerSound("clink.ogg", 'bounce');
         createjs.Sound.registerSound("gate.ogg", 'gate');
+        createjs.Sound.registerSound("knock.ogg", 'knock');
 
         GA.screen = document.getElementById('game').getContext('2d');
         GA.width = 640;
