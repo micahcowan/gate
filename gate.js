@@ -148,8 +148,6 @@ var GateArena = new (function() {
             this.x = player.x;
             this.y = player.y;
 
-            // XXX For now. Later we'll just use the direction, and a
-            // constant speed, not based on player's.
             var dir = player.rot;
             this.h = GA.SHOT_SPEED * Math.sin(dir);
             this.v = -GA.SHOT_SPEED * Math.cos(dir);
@@ -616,7 +614,7 @@ var GateArena = new (function() {
             GG.screen.shadowColor = 'rgba(0,0,0,0.3)';
             GG.screen.shadowOffsetX = 5;
             GG.screen.shadowOffsetY = 5;
-            GG.screen.shadowBlur = 7;
+            GG.screen.shadowBlur = 4.2;
         };
 
         GG.drawBaddie = function(baddie) {
