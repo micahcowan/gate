@@ -621,7 +621,9 @@ var GateArena = new (function() {
                 var maxHW = 80;
                 var percent = (GG.state.gameTime - baddie.killedTime) /
                                     GA.BADDIE_DEATH_TIME;
+                var oldHW = hW;
                 hW = hW + (maxHW - hW) * percent;
+                cRad *= hW / oldHW;
                 alpha -= alpha * percent;
             }
             scr.fillStyle = 'rgba(0,0,128,' + alpha + ')';
@@ -636,7 +638,11 @@ var GateArena = new (function() {
             scr.arcTo(x-hW, y+hW, x-hW, y+hW-cRad, cRad); // BL
             scr.lineTo(x-hW, y-hW+cRad); // L
             scr.arcTo(x-hW, y-hW, x-hW+cRad, y-hW, cRad); // TL
+            scr.save();
+            if (!baddie.killedTime)
+                GG.shadow();
             scr.fill();
+            scr.restore();
             if (!baddie.killedTime) {
                 scr.lineWidth = 2;
                 scr.strokeStyle = 'black';
