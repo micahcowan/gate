@@ -121,13 +121,17 @@ var GateArena = new (function() {
     var GA = this;
 
     GA.PLAYER_ROTATE_SPEED = Math.PI;
-    GA.PLAYER_MAX_VELOCITY = 6;
+    GA.PLAYER_MAX_VELOCITY = 300;
     GA.PLAYER_RADIUS = 8;
     GA.FRICTION = 2.0;
     GA.PLAYER_THRUST = 4 + GA.FRICTION;
     GA.SHOT_SPEED = 6;
     GA.SHOT_RETURN_SPEED = 4;
     GA.GATE_WIDTH = 64;
+    GA.ENEMY_SPAWN_TIME = 4000; // millisecs
+    GA.SINGLE_ENEMY_SPAWN_TIME = 9000; // millisecs
+    GA.GATES_PER_WALL = 3;
+    GA.NUM_DESIRED_ENEMIES = GA.GATES_PER_WALL;
 
     GA.GameState = function() {
         var GS = this;
@@ -201,7 +205,7 @@ var GateArena = new (function() {
         GS.Gate = function(x, y) {
             this.x = x;
             this.y = y;
-            this.open = true;
+            this.open = false;
             this.locked = false;
 
             this.opposingX = x;
@@ -246,6 +250,41 @@ var GateArena = new (function() {
           , lock: function() {
                 this.locked = true;
             }
+          , closeUnlessLocked: function() {
+                if (!this.locked) this.open = false;
+            }
+        };
+
+        GS.BlockBaddie = function(x, y) {
+            var BB = this;
+
+            this.x = x;
+            this.y = y;
+
+            this.pickDestination();
+        };
+        GS.BlockBaddie.prototype = {
+            pickDestination: function() {
+                // For now, just pick a destination, and begin moving to it.
+                this.destX = Math.random() * GA.width;
+                this.destY = Math.random() * GA.height;
+                var dX = this.destX - this.x;
+                var dY = this.destY - this.y;
+
+                var distance = Math.sqrt(dX * dX + dY * dY);
+                var speed = 40;
+                this.h = dX * speed / distance;
+                this.v = dY * speed / distance;
+            }
+          , update: function(delta) {
+                var oldX = this.x;
+                this.x += this.h * (delta / 1000);
+                this.y += this.v * (delta / 1000);
+
+                if ((oldX - this.destX < 0) != (this.x - this.destX < 0)) {
+                    this.pickDestination();
+                }
+            }
         };
 
         GS.Player = function() {
@@ -272,8 +311,8 @@ var GateArena = new (function() {
                 if (newValue > 0) {
                     // Apply friction.
                     // Apply max;
-                    if (newValue > GA.PLAYER_MAX_VELOCITY) {
-                        newValue = GA.PLAYER_MAX_VELOCITY;
+                    if (newValue > GA.PLAYER_MAX_VELOCITY * step) {
+                        newValue = GA.PLAYER_MAX_VELOCITY * step;
                     }
                     var scale = newValue / value;
                     Plyr.h *= scale;
@@ -386,6 +425,56 @@ var GateArena = new (function() {
             GS.gameTime += delta;
             GS.player.update(delta);
             GS.shot.update(delta);
+            for (var i = 0; i < GS.enemies.length; ++i) {
+                GS.enemies[i].update(delta);
+            }
+            GS.maybeSpawnEnemies();
+        };
+
+        GS.maybeSpawnEnemies = function() {
+            var wait = GS.lastKillTime - GS.gameTime;
+            if (GS.enemies.length == 0
+                 && GS.gameTime > GS.lastKillTime + GA.ENEMY_SPAWN_TIME) {
+                // Spawning three enemies.
+
+                GS.closeUnlockedGates();
+
+                // Grab a random wall of gates.
+                var numWalls = 4;
+                var gateNum = Math.floor(Math.random() * numWalls)
+                    * GA.GATES_PER_WALL;
+
+                for (var i=gateNum; i < gateNum + GA.GATES_PER_WALL; ++i) {
+                    GS.spawnEnemyAtGate(GS.gates[i]);
+                }
+            }
+            else if (GS.enemies.length < GA.NUM_DESIRED_ENEMIES
+                     && (GS.gameTime >
+                         GS.lastKillTime + GA.SINGLE_ENEMY_SPAWN_TIME)) {
+                // Spawn one enemy.
+
+                GS.closeUnlockedGates();
+
+                // Wait a while more (if there are still enemies left to
+                // spawn).
+                GS.lastKillTime = GS.gameTime;
+
+                GS.spawnEnemyAtGate(GS.gates[ GS.gates.length * Math.random() ]);
+            }
+        };
+
+        GS.closeUnlockedGates = function() {
+            for (var i = 0; i < GS.gates.length; ++i) {
+                GS.gates[i].closeUnlessLocked();
+            }
+        };
+
+        GS.spawnEnemyAtGate = function(gate) {
+            gate.open = true;
+
+            GS.enemies.push(
+                new GS.BlockBaddie(gate.x, gate.y)
+            );
         };
 
         GS.fire = function() {
@@ -403,10 +492,13 @@ var GateArena = new (function() {
         GS.player = new GS.Player();
         GS.shot = GS.nullShot;
         GS.gameTime = 0;
+        GS.lastKillTime = 0;
+        GS.enemies = [];
 
         GS.gates = [];
         var gXOff = GA.width/4;
         var gYOff = GA.height/4;
+        // Assumes GATES_PER_WALL is 3.
         var gPos = [
             [
                   [gXOff, 2*gXOff, 3*gXOff]
@@ -465,6 +557,9 @@ var GateArena = new (function() {
             }
             GG.drawShot(delta);
             GG.drawPlayer(delta);
+            for (var i=0; i < state.enemies.length; ++i) {
+                GG.drawBaddie(state.enemies[i]);
+            }
         };
 
         GG.shadow = function() {
@@ -472,6 +567,31 @@ var GateArena = new (function() {
             GG.screen.shadowOffsetX = 5;
             GG.screen.shadowOffsetY = 5;
             GG.screen.shadowBlur = 7;
+        };
+
+        GG.drawBaddie = function(baddie) {
+            var scr = GG.screen;
+            var x = baddie.x;
+            var y = baddie.y;
+
+            var hW = 16; // half of width
+            var cRad = 8; // corners radii
+
+            scr.beginPath();
+            scr.moveTo(x-hW+cRad, y-hW);
+            scr.lineTo(x+hW-cRad, y-hW); // T
+            scr.arcTo(x+hW, y-hW, x+hW, y-hW+cRad, cRad); // TR
+            scr.lineTo(x+hW, y+hW-cRad); // R
+            scr.arcTo(x+hW, y+hW, x+hW-cRad, y+hW, cRad); // BR
+            scr.lineTo(x-hW+cRad, y+hW); // B
+            scr.arcTo(x-hW, y+hW, x-hW, y+hW-cRad, cRad); // BL
+            scr.lineTo(x-hW, y-hW+cRad); // L
+            scr.arcTo(x-hW, y-hW, x-hW+cRad, y-hW, cRad); // TL
+            scr.fillStyle = 'rgba(0,0,128,0.45)'
+            scr.fill();
+            scr.lineWidth = 2;
+            scr.strokeStyle = 'black';
+            scr.stroke();
         };
 
         GG.drawGate = function(gate) {

@@ -1,0 +1,4 @@
+- visual/audio cues to explicitly deny teleportation to player shot, as
+  this is apparently slightly perplexing.
+
+- audio response to unlocking gates with shot (/player?).
