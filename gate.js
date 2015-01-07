@@ -129,9 +129,10 @@ var GateArena = new (function() {
     GA.SHOT_RETURN_SPEED = 4;
     GA.GATE_WIDTH = 64;
     GA.ENEMY_SPAWN_TIME = 4000; // millisecs
-    GA.SINGLE_ENEMY_SPAWN_TIME = 9000; // millisecs
+    GA.SINGLE_ENEMY_SPAWN_TIME = 10000; // millisecs
     GA.GATES_PER_WALL = 3;
     GA.NUM_DESIRED_ENEMIES = GA.GATES_PER_WALL;
+    GA.BADDIE_DEATH_TIME = 450; // millisecs
 
     GA.GameState = function() {
         var GS = this;
@@ -264,7 +265,10 @@ var GateArena = new (function() {
             this.pickDestination();
         };
         GS.BlockBaddie.prototype = {
-            pickDestination: function() {
+            width: 32
+          , dying: false
+          , killedTime: 0
+          , pickDestination: function() {
                 // For now, just pick a destination, and begin moving to it.
                 this.destX = Math.random() * GA.width;
                 this.destY = Math.random() * GA.height;
@@ -283,6 +287,42 @@ var GateArena = new (function() {
 
                 if ((oldX - this.destX < 0) != (this.x - this.destX < 0)) {
                     this.pickDestination();
+                }
+
+                if (this.killedTime == 0) {
+                    this.checkShot();
+                }
+                else if (GS.gameTime - this.killedTime >
+                         GA.BADDIE_DEATH_TIME) {
+                    this.killMe();
+                }
+            }
+          , checkShot: function() {
+                if (!GS.shot.fired || !GS.shot.outgoing) return;
+
+                var x = GS.shot.x;
+                var y = GS.shot.y;
+
+                if (x > this.x - this.width/2 &&
+                    x < this.x + this.width/2 &&
+                    y > this.y - this.width/2 &&
+                    y < this.y + this.width/2) {
+
+                    this.killedTime = GS.gameTime;
+                }
+            }
+          , killMe: function() {
+                for (var i=0; i < GS.enemies.length; ++i) {
+                    if (GS.enemies[i] === this) {
+                        GS.enemies.splice(i,1);
+                        if (GS.enemies.length == 0) {
+                            GS.spawnTime = GS.gameTime + GA.ENEMY_SPAWN_TIME;
+                        }
+                        else if (GS.spawnTime < GS.gameTime) {
+                            GS.spawnTime = GS.gameTime + GA.SINGLE_ENEMY_SPAWN_TIME;
+                        }
+                        break;
+                    }
                 }
             }
         };
@@ -432,9 +472,9 @@ var GateArena = new (function() {
         };
 
         GS.maybeSpawnEnemies = function() {
-            var wait = GS.lastKillTime - GS.gameTime;
-            if (GS.enemies.length == 0
-                 && GS.gameTime > GS.lastKillTime + GA.ENEMY_SPAWN_TIME) {
+            if (GS.gameTime < GS.spawnTime) return;
+
+            if (GS.enemies.length == 0) {
                 // Spawning three enemies.
 
                 GS.closeUnlockedGates();
@@ -448,18 +488,17 @@ var GateArena = new (function() {
                     GS.spawnEnemyAtGate(GS.gates[i]);
                 }
             }
-            else if (GS.enemies.length < GA.NUM_DESIRED_ENEMIES
-                     && (GS.gameTime >
-                         GS.lastKillTime + GA.SINGLE_ENEMY_SPAWN_TIME)) {
+            else if (GS.enemies.length < GA.NUM_DESIRED_ENEMIES) {
                 // Spawn one enemy.
 
                 GS.closeUnlockedGates();
 
                 // Wait a while more (if there are still enemies left to
                 // spawn).
-                GS.lastKillTime = GS.gameTime;
+                GS.spawnTime = GS.gameTime + GA.SINGLE_ENEMY_SPAWN_TIME;
 
-                GS.spawnEnemyAtGate(GS.gates[ GS.gates.length * Math.random() ]);
+                GS.spawnEnemyAtGate(GS.gates[
+                    Math.floor(GS.gates.length * Math.random()) ]);
             }
         };
 
@@ -492,7 +531,7 @@ var GateArena = new (function() {
         GS.player = new GS.Player();
         GS.shot = GS.nullShot;
         GS.gameTime = 0;
-        GS.lastKillTime = 0;
+        GS.spawnTime = GA.ENEMY_SPAWN_TIME;
         GS.enemies = [];
 
         GS.gates = [];
@@ -574,8 +613,18 @@ var GateArena = new (function() {
             var x = baddie.x;
             var y = baddie.y;
 
-            var hW = 16; // half of width
+            var hW = baddie.width / 2; // half of width
             var cRad = 8; // corners radii
+
+            var alpha = 0.45;
+            if (baddie.killedTime) {
+                var maxHW = 80;
+                var percent = (GG.state.gameTime - baddie.killedTime) /
+                                    GA.BADDIE_DEATH_TIME;
+                hW = hW + (maxHW - hW) * percent;
+                alpha -= alpha * percent;
+            }
+            scr.fillStyle = 'rgba(0,0,128,' + alpha + ')';
 
             scr.beginPath();
             scr.moveTo(x-hW+cRad, y-hW);
@@ -587,11 +636,12 @@ var GateArena = new (function() {
             scr.arcTo(x-hW, y+hW, x-hW, y+hW-cRad, cRad); // BL
             scr.lineTo(x-hW, y-hW+cRad); // L
             scr.arcTo(x-hW, y-hW, x-hW+cRad, y-hW, cRad); // TL
-            scr.fillStyle = 'rgba(0,0,128,0.45)'
             scr.fill();
-            scr.lineWidth = 2;
-            scr.strokeStyle = 'black';
-            scr.stroke();
+            if (!baddie.killedTime) {
+                scr.lineWidth = 2;
+                scr.strokeStyle = 'black';
+                scr.stroke();
+            }
         };
 
         GG.drawGate = function(gate) {
