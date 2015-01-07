@@ -157,12 +157,38 @@ var GateArena = new (function() {
             update: function(delta) {
                 this.x += this.h;
                 this.y += this.v;
+
+                if (   this.x < 0
+                    || this.x > GA.width
+                    || this.y < 0
+                    || this.y > GA.height) {
+
+                    // Player bullet hit a wall.
+                    // First, check if we hit any gates.
+                    for (var i=0; i < GS.gates.length; ++i) {
+                        if (GS.gates[i].checkCollision(this.x, this.y)) {
+                            GS.gates[i].lock();
+                            break;
+                        }
+                    }
+                    createjs.Sound.play('knock');
+                    this.recall();
+                }
             },
             returnUpdate: function(delta) {
                 // Swapped out for update() when returning.
                 var dir = Math.atan2(GS.player.x - this.x, GS.player.y - this.y);
                 this.x += GA.SHOT_RETURN_SPEED * Math.sin(dir);
                 this.y += GA.SHOT_RETURN_SPEED * Math.cos(dir);
+
+                if (Math.abs(this.x - GS.player.x) <= GA.PLAYER_RADIUS
+                    && Math.abs(this.y - GS.player.y) <= GA.PLAYER_RADIUS) {
+
+                    createjs.Sound.play('slurp');
+                    
+                    // Returned to player; remove reference to self from state.
+                    GS.shot = GS.nullShot;
+                }
             },
             recall: function(delta) {
                 // Shot being recalled to ship.
@@ -360,30 +386,6 @@ var GateArena = new (function() {
             GS.gameTime += delta;
             GS.player.update(delta);
             GS.shot.update(delta);
-            if (   GS.shot.x < 0
-                || GS.shot.x > GA.width
-                || GS.shot.y < 0
-                || GS.shot.y > GA.height) {
-
-                // Player bullet hit a wall.
-                // First, check if we hit any gates.
-                for (var i=0; i < GS.gates.length; ++i) {
-                    if (GS.gates[i].checkCollision(GS.shot.x, GS.shot.y)) {
-                        GS.gates[i].lock();
-                        break;
-                    }
-                }
-                if (GS.shot.outgoing)
-                    createjs.Sound.play('knock');
-                GS.shot.recall();
-            }
-            if (!GS.shot.outgoing
-                && Math.abs(GS.shot.x - GS.player.x) <= GA.PLAYER_RADIUS
-                && Math.abs(GS.shot.y - GS.player.y) <= GA.PLAYER_RADIUS) {
-
-                createjs.Sound.play('slurp');
-                GS.shot = GS.nullShot;
-            }
         };
 
         GS.fire = function() {
@@ -473,6 +475,8 @@ var GateArena = new (function() {
         };
 
         GG.drawGate = function(gate) {
+            if (!gate.open) return;
+
             var scr = GG.screen;
 
             var x = gate.x;
