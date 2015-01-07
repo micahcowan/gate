@@ -126,7 +126,7 @@ var GateArena = new (function() {
     GA.FRICTION = 2.0;
     GA.PLAYER_THRUST = 4 + GA.FRICTION;
     GA.SHOT_SPEED = 6;
-    GA.SHOT_RETURN_SPEED = 4;
+    GA.SHOT_RETURN_SPEED = GA.SHOT_SPEED;
     GA.GATE_WIDTH = 64;
     GA.ENEMY_SPAWN_TIME = 4000; // millisecs
     GA.SINGLE_ENEMY_SPAWN_TIME = 10000; // millisecs
@@ -170,13 +170,15 @@ var GateArena = new (function() {
 
                     // Player bullet hit a wall.
                     // First, check if we hit any gates.
+                    var locked = false;
                     for (var i=0; i < GS.gates.length; ++i) {
                         if (GS.gates[i].checkCollision(this.x, this.y)) {
+                            locked = true;
                             GS.gates[i].lock();
                             break;
                         }
                     }
-                    createjs.Sound.play('knock');
+                    if (!locked) createjs.Sound.play('knock');
                     this.recall();
                 }
             },
@@ -249,6 +251,8 @@ var GateArena = new (function() {
                 }
             }
           , lock: function() {
+                if (!this.locked)
+                    createjs.Sound.play('open');
                 this.locked = true;
             }
           , closeUnlessLocked: function() {
@@ -309,6 +313,7 @@ var GateArena = new (function() {
                     y < this.y + this.width/2) {
 
                     this.killedTime = GS.gameTime;
+                    createjs.Sound.play('kill');
                 }
             }
           , killMe: function() {
@@ -393,6 +398,7 @@ var GateArena = new (function() {
                     newV = -Plyr.v;
                 }
 
+                var locked = false;
                 if (bounced) {
                     // Double check we didn't just pass through a gate.
                     var portaled = false;
@@ -401,6 +407,7 @@ var GateArena = new (function() {
                         var gate = GS.gates[i];
                         var j = (i + 6) % GS.gates.length; //opposing gate's index
                         if (gate.checkCollision(Plyr.x, Plyr.y)) {
+                            locked = true;
                             gate.lock();
                             var og = GS.gates[j]; //opposing gate
                             if (og.open) {
@@ -418,7 +425,7 @@ var GateArena = new (function() {
                     if (portaled) {
                         createjs.Sound.play('gate');
                     }
-                    else {
+                    else if (!locked) {
                         createjs.Sound.play('bounce');
                     }
 
@@ -487,6 +494,8 @@ var GateArena = new (function() {
                 for (var i=gateNum; i < gateNum + GA.GATES_PER_WALL; ++i) {
                     GS.spawnEnemyAtGate(GS.gates[i]);
                 }
+
+                createjs.Sound.play('spawn');
             }
             else if (GS.enemies.length < GA.NUM_DESIRED_ENEMIES) {
                 // Spawn one enemy.
@@ -499,6 +508,8 @@ var GateArena = new (function() {
 
                 GS.spawnEnemyAtGate(GS.gates[
                     Math.floor(GS.gates.length * Math.random()) ]);
+
+                createjs.Sound.play('spawn');
             }
         };
 
@@ -806,6 +817,9 @@ var GateArena = new (function() {
         createjs.Sound.registerSound("gate.ogg", 'gate');
         createjs.Sound.registerSound("knock.ogg", 'knock');
         createjs.Sound.registerSound("slurp.ogg", 'slurp');
+        createjs.Sound.registerSound("spawn.ogg", 'spawn');
+        createjs.Sound.registerSound("open.ogg", 'open');
+        createjs.Sound.registerSound("kill.ogg", 'kill');
 
         GA.screen = document.getElementById('game').getContext('2d');
         GA.width = 640;

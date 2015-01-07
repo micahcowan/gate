@@ -1,4 +1,8 @@
+- Consider having player momentum affect bullet trajectory.
+
 - visual/audio cues to explicitly deny teleportation to player shot, as
   this is apparently slightly perplexing.
 
-- audio response to unlocking gates with shot (/player?).
+- visual cue as player draws near open gate, to clue towards teleport.
+
+- Fix sound in Safari (is ogg the difference?)
