@@ -121,7 +121,7 @@ var GateArena = new (function() {
     var GA = this;
 
     GA.PLAYER_ROTATE_SPEED = Math.PI;
-    GA.PLAYER_MAX_VELOCITY = 300;
+    GA.PLAYER_MAX_VELOCITY = 240;
     GA.PLAYER_RADIUS = 8;
     GA.FRICTION = 2.0;
     GA.PLAYER_THRUST = 4 + GA.FRICTION;
@@ -828,6 +828,7 @@ var GateArena = new (function() {
 
         GA.framesPerSec = 50;
         GA.msecsPerFrame = 1000 / GA.framesPerSec;
+        GA.maxMsecsPerFrame = 2 * GA.msecsPerFrame;
 
         GA.now = new Date();
         GA.update();
@@ -836,6 +837,8 @@ var GateArena = new (function() {
     GA.update = function() {
         var now = new Date();
         var delta = now - GA.now;
+        if (delta > GA.maxMsecsPerFrame)
+            delta = GA.maxMsecsPerFrame;
         GA.now = now;
 
         MajicKeys.pulse();
