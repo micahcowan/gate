@@ -271,25 +271,29 @@ var GateArena = new (function() {
           , dying: false
           , killedTime: 0
           , pickDestination: function() {
-                // For now, just pick a destination, and begin moving to it.
-                this.destX = Math.random() * GA.width;
-                this.destY = Math.random() * GA.height;
-                var dX = this.destX - this.x;
-                var dY = this.destY - this.y;
+                // Pick three random points on the screen, for a cubic
+                // Bezier path.
+                this.dests = [[this.x, this.y]];
 
-                var distance = Math.sqrt(dX * dX + dY * dY);
-                var speed = 40;
-                this.h = dX * speed / distance;
-                this.v = dY * speed / distance;
+                for (var i=1; i != 4; ++i) {
+                    var p = this.dests[i] = [];
+                    p[0] = Math.random() * GA.width;
+                    p[1] = Math.random() * GA.height;
+                }
+
+                // TODO: calculate this using a max accel
+                this.curveSpeed = 0.15; // % of curve completed per sec
+                this.curveDone = 0.0; // Total curve completed
             }
           , update: function(delta) {
-                var oldX = this.x;
-                this.x += this.h * (delta / 1000);
-                this.y += this.v * (delta / 1000);
+                this.curveDone += this.curveSpeed * (delta / 1000);
+                var xs = function(p) { return p[0]; };
+                var ys = function(p) { return p[1]; };
+                this.x = GA.bezier(this.curveDone, this.dests.map(xs));
+                this.y = GA.bezier(this.curveDone, this.dests.map(ys));
 
-                if ((oldX - this.destX < 0) != (this.x - this.destX < 0)) {
+                if (this.curveDone > 1)
                     this.pickDestination();
-                }
 
                 if (this.killedTime == 0) {
                     this.checkShot();
@@ -625,6 +629,24 @@ var GateArena = new (function() {
             var hW = baddie.width / 2; // half of width
             var cRad = 8; // corners radii
 
+            // DEBUG: Draw controls for first baddie
+            if (baddie === GG.state.enemies[0]) {
+                scr.beginPath();
+                scr.moveTo(baddie.dests[0][0], baddie.dests[0][1]);
+                scr.lineTo(baddie.dests[1][0], baddie.dests[1][1]);
+                scr.moveTo(baddie.dests[2][0], baddie.dests[2][1]);
+                scr.lineTo(baddie.dests[3][0], baddie.dests[3][1]);
+                scr.moveTo(baddie.dests[0][0], baddie.dests[0][1]);
+                scr.bezierCurveTo(
+                        baddie.dests[1][0], baddie.dests[1][1],
+                        baddie.dests[2][0], baddie.dests[2][1],
+                        baddie.dests[3][0], baddie.dests[3][1]
+                        );
+                scr.lineWidth = 3;
+                scr.strokeStyle = 'rgba(128,0,255,0.8)';
+                scr.stroke();
+            }
+
             var alpha = 0.45;
             if (baddie.killedTime) {
                 var maxHW = 80;
@@ -806,6 +828,27 @@ var GateArena = new (function() {
             s.stroke();
             s.restore();
         };
+    };
+
+    GA.bezier = function(t, ps) {
+        if (ps.length == 0) {
+            return 1/0; // undefined
+        }
+        else if (ps.length == 1) {
+            return ps[0];
+        }
+        else {
+            var first = [];
+            var last = [];
+            for (var i=0; i != ps.length; ++i) {
+                if (i != ps.length-1)
+                    first.push(ps[i]);
+                if (i != 0)
+                    last.push(ps[i]);
+            }
+            var ret = (1-t) * GA.bezier(t,first);
+            return ret + t * GA.bezier(t,last);
+        }
     };
 
     // GateArena functions
