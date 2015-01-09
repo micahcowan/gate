@@ -1,4 +1,8 @@
-- Consider having player momentum affect bullet trajectory.
+- Enemies shouldn't suddenly appear in front of gate, but should run in from gate.
+
+- Enemies accelerate towards destinations? Cubic bezier was nice idea,
+  but using the real acceleration is too jittery, and getting cubic
+  roots for constant speed is too hard.
 
 - visual/audio cues to explicitly deny teleportation to player shot, as
   this is apparently slightly perplexing.
