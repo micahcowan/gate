@@ -128,7 +128,7 @@ var GateArena = new (function() {
     GA.SHOT_SPEED = 6;
     GA.SHOT_RETURN_SPEED = GA.SHOT_SPEED;
     GA.GATE_WIDTH = 64;
-    GA.ENEMY_SPAWN_TIME = 4000; // millisecs
+    GA.ENEMY_SPAWN_TIME = 2000; // millisecs
     GA.SINGLE_ENEMY_SPAWN_TIME = 10000; // millisecs
     GA.GATES_PER_WALL = 3;
     GA.NUM_DESIRED_ENEMIES = GA.GATES_PER_WALL;
@@ -264,32 +264,60 @@ var GateArena = new (function() {
             this.x = x;
             this.y = y;
 
-            this.pickDestination();
+            this.init();
         };
         GS.BlockBaddie.prototype = {
             width: 32
           , dying: false
           , killedTime: 0
-          , pickDestination: function() {
-                // For now, just pick a destination, and begin moving to it.
-                this.destX = Math.random() * GA.width;
-                this.destY = Math.random() * GA.height;
-                var dX = this.destX - this.x;
-                var dY = this.destY - this.y;
+          , speed: 72
+          , buffer: 120
+          , init: function() {
+                // Initial velocity is "out the gate".
+                // We calculate the direction, "towards the center",
+                // and then normalize it to exactly one of the four
+                // basic compass points.
+                //
+                // (North is represented twice, so we can find "near"
+                // when it's either close to 0, or close to 2 * PI.)
+                var compass = [0,1,2,3,4].map(function(x) { return x * Math.PI/2; });
+                this.dir = Math.atan2(GA.width/2 - this.x, GA.height/2 - this.y);
+                if (this.dir < 0) {
+                    this.dir = Math.PI * 2 + this.dir;
+                }
+                var dists = compass.slice().map(function(x) { return Math.abs(x - this.dir); }, this);
+                var minIdx = 0;
+                var min = dists[0];
+                for (var i=1; i != dists.length; ++i) {
+                    if (dists[i] < dists[minIdx]) {
+                        minIdx = i;
+                        min = dists[i];
+                    }
+                }
+                this.dir = compass[minIdx];
 
-                var distance = Math.sqrt(dX * dX + dY * dY);
-                var speed = 40;
-                this.h = dX * speed / distance;
-                this.v = dY * speed / distance;
+                this.h = this.speed * Math.sin(this.dir);
+                this.v = this.speed * Math.cos(this.dir);
             }
           , update: function(delta) {
-                var oldX = this.x;
                 this.x += this.h * (delta / 1000);
                 this.y += this.v * (delta / 1000);
 
-                if ((oldX - this.destX < 0) != (this.x - this.destX < 0)) {
-                    this.pickDestination();
+                if (this.x < 0) {
+                    this.x = 0;
                 }
+                else if (this.x > GA.width) {
+                    this.x = GA.width;
+                }
+
+                if (this.y < 0) {
+                    this.y = 0;
+                }
+                else if (this.y > GA.height) {
+                    this.y = GA.height;
+                }
+
+                this.adjustDir();
 
                 if (this.killedTime == 0) {
                     this.checkShot();
@@ -298,6 +326,92 @@ var GateArena = new (function() {
                          GA.BADDIE_DEATH_TIME) {
                     this.killMe();
                 }
+            }
+          , adjustDir: function() {
+                // Redirect our direction whenever the "buffer" hits a
+                // wall.
+
+                var xy = [ this.x, this.y ];
+                var bxy = [ xy[0] + this.buffer * Math.sin(this.dir), xy[1] + this.buffer * Math.cos(this.dir) ];
+                var bounds = [ GA.width, GA.height ];
+                var t, u, e;
+                var pm;
+                var poss;
+                var dirs, dists;
+                var diff;
+
+                if (bxy[0] < 0 || bxy[0] > bounds[0]) {
+                    t = 0;
+                    u = 1;
+                    e = bxy[0] < 0? 0 : bounds[0];
+                    if (bxy[1] < 0 || bxy[1] > bounds[1]) {
+                        // We've just driven the buffer into a corner.
+                        // If the buffer line is mainly pointing
+                        // vertically, slide horizontally.
+                        if (Math.abs(bxy[1] - xy[1]) > Math.abs(bxy[0] - xy[0])) {
+                            t = 1;
+                            u = 0;
+                            e = bxy[1] < 0? 0: bounds[1];
+                        }
+                    }
+                }
+                else if (bxy[1] < 0 || bxy[1] > bounds[1]) {
+                    t = 1;
+                    u = 0;
+                    e = bxy[1] < 0? 0 : bounds[1];
+                }
+                else {
+                    // No bounds exceeded, nothing to adjust.
+                    return;
+                }
+
+                // buffer must remain a constant distance from baddie,
+                // and inside the game area. We know where the new
+                // bxy[t] position is: it's at whatever wall we touched. Now we
+                // need good ol' Pythaggy to tell us where new bxy[u] is.
+                //
+                // (xy[t] - e)^2 + (xy[u] - bxy[u])^2 = this.buffer^2
+                // xy[u] - bxy[u] = +/- sqrt( this.buffer^2 - (xy[t] - e)^2 )
+                // - bxy[u] = +/- sqrt( this.buffer^2 - (xy[t] - e)^2 ) - xy[u]
+                // bxy[u] = xy[u] +/- sqrt( this.buffer^2 - (xy[t] - e)^2 )
+                pm = Math.sqrt((this.buffer * this.buffer) - (xy[t] - e) * (xy[t] - e));
+                poss = [xy[u] - pm, xy[u] + pm];
+
+                // Okay, so which of the +/- branch should we choose?
+                // First, if one of them turns out to be out of bounds,
+                // then it's ruled out.
+                if (poss[0] < 0)
+                    poss.splice(0, 1);
+                else if (poss[1] > bounds[u])
+                    poss.splice(1, 1);
+
+                dirs = poss.map(function (x) {
+                    return t == 0? Math.atan2(e - xy[t], x - xy[u])
+                                 : Math.atan2(x - xy[u], e - xy[t]);
+                });
+
+                if (dirs.length > 1) {
+                    // Okay, next, choose whichever branch brings us to
+                    // the closest direction to the current one.
+                    dists = dirs.map(function (x) {
+                        return GA.diffRadians(this.dir, x);
+                    }, this);
+
+                    diff = dists[0] - dists[1];
+                    if (Math.abs(diff) < 0.0001) {
+                        // Both are equal; just pick one randomly.
+                        this.dir = dirs[ Math.floor( 2 * Math.random() ) ];
+                    }
+                    else {
+                        this.dir = dirs[ diff > 0? 1 : 0 ];
+                    }
+                }
+                else {
+                    this.dir = dirs[0];
+                }
+
+                this.h = this.speed * Math.sin(this.dir);
+                this.v = this.speed * Math.cos(this.dir);
             }
           , checkShot: function() {
                 if (!GS.shot.fired || !GS.shot.outgoing) return;
@@ -657,6 +771,14 @@ var GateArena = new (function() {
                 scr.strokeStyle = 'black';
                 scr.stroke();
             }
+
+            // XXX: buffer line
+            scr.beginPath();
+            scr.moveTo(x, y);
+            scr.lineTo(x + baddie.buffer * Math.sin(baddie.dir), y + baddie.buffer * Math.cos(baddie.dir));
+            scr.lineWidth = 1;
+            scr.strokeStyle = 'black';
+            scr.stroke();
         };
 
         GG.drawGate = function(gate) {
@@ -846,6 +968,26 @@ var GateArena = new (function() {
         GA.graphics.update(GA.state, delta);
 
         window.setTimeout(GA.update, GA.msecsPerFrame);
+    };
+
+    GA.normalizeRadians = function(x) {
+        // Take a degree in radians, and force it to the range 0 - 2pi
+        if (x < 0) {
+            return 2 * Math.PI + (x % (2 * Math.PI));
+        }
+        else {
+            return x % (2 * Math.PI);
+        }
+    };
+
+    GA.diffRadians = function(a, b) {
+        a = GA.normalizeRadians(a);
+        b = GA.normalizeRadians(b);
+        var diff = Math.abs(a - b);
+        if (diff > Math.PI)
+            return 2 * Math.PI - diff;
+        else
+            return diff;
     };
 })();
 
