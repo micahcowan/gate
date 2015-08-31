@@ -271,7 +271,7 @@ var GateArena = new (function() {
           , dying: false
           , killedTime: 0
           , speed: 72
-          , buffer: 60
+          , lance: 60  // Invisible lance that keeps baddies from steering into walls.
           , init: function() {
                 // Initial velocity is "out the gate".
                 // We calculate the direction, "towards the center",
@@ -318,7 +318,7 @@ var GateArena = new (function() {
                     this.y = GA.height - w;
                 }
 
-                this.adjustDir();
+                this.adjustForLance();
 
                 if (this.killedTime == 0) {
                     this.checkShot();
@@ -328,12 +328,12 @@ var GateArena = new (function() {
                     this.killMe();
                 }
             }
-          , adjustDir: function() {
-                // Redirect our direction whenever the "buffer" hits a
+          , adjustForLance: function() {
+                // Redirect our direction whenever the "lance" hits a
                 // wall.
 
                 var xy = [ this.x, this.y ];
-                var bxy = [ xy[0] + this.buffer * Math.sin(this.dir), xy[1] + this.buffer * Math.cos(this.dir) ];
+                var bxy = [ xy[0] + this.lance * Math.sin(this.dir), xy[1] + this.lance * Math.cos(this.dir) ];
                 var bounds = [ GA.width, GA.height ];
                 var t, u, e;
                 var pm;
@@ -346,8 +346,8 @@ var GateArena = new (function() {
                     u = 1;
                     e = bxy[0] < 0? 0 : bounds[0];
                     if (bxy[1] < 0 || bxy[1] > bounds[1]) {
-                        // We've just driven the buffer into a corner.
-                        // If the buffer line is mainly pointing
+                        // We've just driven the lance into a corner.
+                        // If the lance line is mainly pointing
                         // vertically, slide horizontally.
                         if (Math.abs(bxy[1] - xy[1]) > Math.abs(bxy[0] - xy[0])) {
                             t = 1;
@@ -366,16 +366,16 @@ var GateArena = new (function() {
                     return;
                 }
 
-                // buffer must remain a constant distance from baddie,
+                // lance must remain a constant distance from baddie,
                 // and inside the game area. We know where the new
                 // bxy[t] position is: it's at whatever wall we touched. Now we
                 // need good ol' Pythaggy to tell us where new bxy[u] is.
                 //
-                // (xy[t] - e)^2 + (xy[u] - bxy[u])^2 = this.buffer^2
-                // xy[u] - bxy[u] = +/- sqrt( this.buffer^2 - (xy[t] - e)^2 )
-                // - bxy[u] = +/- sqrt( this.buffer^2 - (xy[t] - e)^2 ) - xy[u]
-                // bxy[u] = xy[u] +/- sqrt( this.buffer^2 - (xy[t] - e)^2 )
-                pm = Math.sqrt((this.buffer * this.buffer) - (xy[t] - e) * (xy[t] - e));
+                // (xy[t] - e)^2 + (xy[u] - bxy[u])^2 = this.lance^2
+                // xy[u] - bxy[u] = +/- sqrt( this.lance^2 - (xy[t] - e)^2 )
+                // - bxy[u] = +/- sqrt( this.lance^2 - (xy[t] - e)^2 ) - xy[u]
+                // bxy[u] = xy[u] +/- sqrt( this.lance^2 - (xy[t] - e)^2 )
+                pm = Math.sqrt((this.lance * this.lance) - (xy[t] - e) * (xy[t] - e));
                 poss = [xy[u] - pm, xy[u] + pm];
 
                 // Okay, so which of the +/- branch should we choose?
@@ -773,10 +773,10 @@ var GateArena = new (function() {
                 scr.stroke();
             }
 
-            // XXX: buffer line
+            // XXX: lance line
             scr.beginPath();
             scr.moveTo(x, y);
-            scr.lineTo(x + baddie.buffer * Math.sin(baddie.dir), y + baddie.buffer * Math.cos(baddie.dir));
+            scr.lineTo(x + baddie.lance * Math.sin(baddie.dir), y + baddie.lance * Math.cos(baddie.dir));
             scr.lineWidth = 1;
             scr.strokeStyle = 'black';
             scr.stroke();
