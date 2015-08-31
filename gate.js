@@ -820,7 +820,7 @@ var GateArena = new (function() {
                 scr.stroke();
             }
 
-            return;
+            if (!GA.debug) return;
             // XXX: lance line
             scr.beginPath();
             scr.moveTo(x, y);
