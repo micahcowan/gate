@@ -271,7 +271,7 @@ var GateArena = new (function() {
           , dying: false
           , killedTime: 0
           , speed: 72
-          , buffer: 120
+          , buffer: 60
           , init: function() {
                 // Initial velocity is "out the gate".
                 // We calculate the direction, "towards the center",
@@ -302,19 +302,20 @@ var GateArena = new (function() {
           , update: function(delta) {
                 this.x += this.h * (delta / 1000);
                 this.y += this.v * (delta / 1000);
+                var w = this.width/2 + 2;
 
-                if (this.x < 0) {
-                    this.x = 0;
+                if (this.x < w) {
+                    this.x = w;
                 }
-                else if (this.x > GA.width) {
-                    this.x = GA.width;
+                else if (this.x > GA.width - w) {
+                    this.x = GA.width - w;
                 }
 
-                if (this.y < 0) {
-                    this.y = 0;
+                if (this.y < w) {
+                    this.y = w;
                 }
-                else if (this.y > GA.height) {
-                    this.y = GA.height;
+                else if (this.y > GA.height - w) {
+                    this.y = GA.height - w;
                 }
 
                 this.adjustDir();
