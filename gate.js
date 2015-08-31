@@ -270,7 +270,10 @@ var GateArena = new (function() {
             width: 32
           , dying: false
           , killedTime: 0
-          , speed: 72
+          , speed: 70
+          , minWaitChDir: 2000
+          , maxWaitChDir: 4000
+          , maxRotatePerSec: Math.PI / 2
           , lance: 60  // Invisible lance that keeps baddies from steering into walls.
           , init: function() {
                 // Initial velocity is "out the gate".
@@ -285,7 +288,7 @@ var GateArena = new (function() {
                 if (this.dir < 0) {
                     this.dir = Math.PI * 2 + this.dir;
                 }
-                var dists = compass.slice().map(function(x) { return Math.abs(x - this.dir); }, this);
+                var dists = compass.map(function(x) { return Math.abs(x - this.dir); }, this);
                 var minIdx = 0;
                 var min = dists[0];
                 for (var i=1; i != dists.length; ++i) {
@@ -294,7 +297,11 @@ var GateArena = new (function() {
                         min = dists[i];
                     }
                 }
-                this.dir = compass[minIdx];
+                this.dir = this.desiredDir = compass[minIdx];
+                // First direction change happens different range of
+                // times than the rest.
+                this.timeChDir = 500
+                    + Math.random() * 1000
 
                 this.h = this.speed * Math.sin(this.dir);
                 this.v = this.speed * Math.cos(this.dir);
@@ -318,7 +325,7 @@ var GateArena = new (function() {
                     this.y = GA.height - w;
                 }
 
-                this.adjustForLance();
+                this.adjustDir(delta);
 
                 if (this.killedTime == 0) {
                     this.checkShot();
@@ -327,6 +334,38 @@ var GateArena = new (function() {
                          GA.BADDIE_DEATH_TIME) {
                     this.killMe();
                 }
+            }
+          , adjustDir: function(delta) {
+                var oldDir = this.dir;
+
+                this.timeChDir -= delta;
+                if (this.timeChDir < 0) {
+                    // Choose random new desired direction and wait time
+                    this.desiredDir = Math.random() * 2 * Math.PI;
+                    this.timeChDir = this.minWaitChDir
+                        + Math.random() * (this.maxWaitChDir - this.minWaitChDir);
+                }
+                // If our current direction isn't our desired direction,
+                // then adjust.
+                if (this.dir != this.desiredDir) {
+                    var diff = GA.diffRadians(this.desiredDir, this.dir);
+                    var maxRotate = this.maxRotatePerSec * delta/1000;
+                    if (Math.abs(diff) <= maxRotate)
+                        this.dir = this.desiredDir;
+                    else if (diff < 0)
+                        this.dir -= maxRotate;
+                    else
+                        this.dir += maxRotate;
+                }
+
+                this.adjustForLance();
+
+                if (this.dir != oldDir) {
+                    this.h = this.speed * Math.sin(this.dir);
+                    this.v = this.speed * Math.cos(this.dir);
+                }
+
+                this.dir = GA.normalizeRadians(this.dir);
             }
           , adjustForLance: function() {
                 // Redirect our direction whenever the "lance" hits a
@@ -395,7 +434,7 @@ var GateArena = new (function() {
                     // Okay, next, choose whichever branch brings us to
                     // the closest direction to the current one.
                     dists = dirs.map(function (x) {
-                        return GA.diffRadians(this.dir, x);
+                        return Math.abs(GA.diffRadians(this.dir, x));
                     }, this);
 
                     diff = dists[0] - dists[1];
@@ -410,9 +449,6 @@ var GateArena = new (function() {
                 else {
                     this.dir = dirs[0];
                 }
-
-                this.h = this.speed * Math.sin(this.dir);
-                this.v = this.speed * Math.cos(this.dir);
             }
           , checkShot: function() {
                 if (!GS.shot.fired || !GS.shot.outgoing) return;
@@ -773,12 +809,22 @@ var GateArena = new (function() {
                 scr.stroke();
             }
 
+            // return;
             // XXX: lance line
             scr.beginPath();
             scr.moveTo(x, y);
             scr.lineTo(x + baddie.lance * Math.sin(baddie.dir), y + baddie.lance * Math.cos(baddie.dir));
             scr.lineWidth = 1;
             scr.strokeStyle = 'black';
+            scr.stroke();
+
+            // XXX: Arc to desiredDir
+            scr.beginPath();
+            var adj = Math.PI / 2;
+            var diff = GA.diffRadians(baddie.desiredDir, baddie.dir)
+            scr.arc(x, y, 40, -baddie.dir + adj, -baddie.desiredDir + adj, diff > 0);
+            scr.lineWidth = 2;
+            scr.strokeStyle = 'magenta';
             scr.stroke();
         };
 
@@ -982,11 +1028,14 @@ var GateArena = new (function() {
     };
 
     GA.diffRadians = function(a, b) {
+        // Return the diff between a and b, with an absolute value < pi.
         a = GA.normalizeRadians(a);
         b = GA.normalizeRadians(b);
-        var diff = Math.abs(a - b);
-        if (diff > Math.PI)
-            return 2 * Math.PI - diff;
+        var diff = a - b;
+        if (diff < -Math.PI)
+            return diff + 2 * Math.PI;
+        else if (diff > Math.PI)
+            return diff - 2 * Math.PI;
         else
             return diff;
     };
