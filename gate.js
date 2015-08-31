@@ -128,7 +128,7 @@ var GateArena = new (function() {
     GA.SHOT_SPEED = 6;
     GA.SHOT_RETURN_SPEED = GA.SHOT_SPEED;
     GA.GATE_WIDTH = 64;
-    GA.ENEMY_SPAWN_TIME = 2000; // millisecs
+    GA.ENEMY_SPAWN_TIME = 4000; // millisecs
     GA.SINGLE_ENEMY_SPAWN_TIME = 10000; // millisecs
     GA.GATES_PER_WALL = 3;
     GA.NUM_DESIRED_ENEMIES = GA.GATES_PER_WALL;
@@ -271,9 +271,9 @@ var GateArena = new (function() {
           , dying: false
           , killedTime: 0
           , speed: 70
-          , minWaitChDir: 2000
-          , maxWaitChDir: 4000
-          , maxRotatePerSec: Math.PI / 2
+          , minWaitChDir: 3000
+          , maxWaitChDir: 5000
+          , maxRotatePerSec: Math.PI * 3/5
           , lance: 60  // Invisible lance that keeps baddies from steering into walls.
           , init: function() {
                 // Initial velocity is "out the gate".
@@ -341,7 +341,18 @@ var GateArena = new (function() {
                 this.timeChDir -= delta;
                 if (this.timeChDir < 0) {
                     // Choose random new desired direction and wait time
-                    this.desiredDir = Math.random() * 2 * Math.PI;
+                    if (false) {
+                        // original "randomize direction"
+                        this.desiredDir = Math.random() * 2 * Math.PI;
+                    }
+                    else {
+                        // new: pick a random location, and use the
+                        // direction to there (expected to point us away
+                        // from walls when we're near)
+                        var rx = Math.random() * GA.width;
+                        var ry = Math.random() * GA.height;
+                        this.desiredDir = GA.normalizeRadians(Math.atan2(rx - this.x, ry - this.y));
+                    }
                     this.timeChDir = this.minWaitChDir
                         + Math.random() * (this.maxWaitChDir - this.minWaitChDir);
                 }
@@ -809,7 +820,7 @@ var GateArena = new (function() {
                 scr.stroke();
             }
 
-            // return;
+            return;
             // XXX: lance line
             scr.beginPath();
             scr.moveTo(x, y);
