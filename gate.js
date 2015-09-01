@@ -122,7 +122,10 @@ var GateArena = new (function() {
 
     GA.PLAYER_ROTATE_SPEED = Math.PI;
     GA.PLAYER_MAX_VELOCITY = 240;
-    GA.PLAYER_RADIUS = 8;
+    GA.PLAYER_RADIUS = 12;
+    GA.PLAYER_MAX_HIT_POINTS = 3;
+    GA.PLAYER_RECOVER_TIME = 10000;
+    GA.PLAYER_INJURED_PENALTY = 0.33;
     GA.FRICTION = 2.0;
     GA.PLAYER_THRUST = 4 + GA.FRICTION;
     GA.SHOT_SPEED = 6;
@@ -370,8 +373,11 @@ var GateArena = new (function() {
                     var baddie = this;
 
                     // Fire a bullet.
-                    // Randomly for now.
                     var dir = Math.atan2(GS.player.x - this.x, this.y - GS.player.y);
+                    // Add some noise, the enemies aren't fantastic
+                    // shots.
+                    var noiseRange = Math.PI / 4;
+                    dir += Math.random() * noiseRange - noiseRange/2;
                     this.shot = new GS.Shot(this, dir, GS.gameTime);
                     createjs.Sound.play('shot');
                     this.shot.destroy = function() {
@@ -547,7 +553,7 @@ var GateArena = new (function() {
             Plyr.rotDir = 0;
             Plyr.thrust = 0;
             Plyr.thrustDir = 0;
-            Plyr.hitPoints = 3;
+            Plyr.hitPoints = GA.PLAYER_MAX_HIT_POINTS;
 
             Plyr.update = function(delta) {
                 if (Plyr.hitPoints == 0) {
@@ -556,6 +562,13 @@ var GateArena = new (function() {
                     Plyr.x += Plyr.h;
                     Plyr.y += Plyr.v;
                     return;
+                }
+
+                if (Plyr.hitPoints < GA.PLAYER_MAX_HIT_POINTS
+                    && GS.gameTime - Plyr.injuredTime >= GA.PLAYER_RECOVER_TIME) {
+
+                    Plyr.hitPoints++;
+                    Plyr.injuredTime = GS.gameTime;
                 }
                 var rd = Plyr.rotDir;
                 var step = delta/1000.0;
@@ -569,8 +582,11 @@ var GateArena = new (function() {
                 if (newValue > 0) {
                     // Apply friction.
                     // Apply max;
-                    if (newValue > GA.PLAYER_MAX_VELOCITY * step) {
-                        newValue = GA.PLAYER_MAX_VELOCITY * step;
+                    var maxVeloc = GA.PLAYER_MAX_VELOCITY;
+                    maxVeloc -= maxVeloc * GA.PLAYER_INJURED_PENALTY
+                        * (GA.PLAYER_MAX_HIT_POINTS - Plyr.hitPoints);
+                    if (newValue > maxVeloc * step) {
+                        newValue = maxVeloc * step;
                     }
                     var scale = newValue / value;
                     Plyr.h *= scale;
@@ -630,6 +646,9 @@ var GateArena = new (function() {
                                 newH = Plyr.h;
                                 newV = Plyr.v;
                                 portaled = true;
+                                // Passing through a portal restores
+                                // one's health.
+                                Plyr.hitPoints = GA.PLAYER_MAX_HIT_POINTS;
                             }
                             break;
                         }
@@ -657,11 +676,13 @@ var GateArena = new (function() {
                 if (--Plyr.hitPoints > 0) {
                     // FIXME: better sound?
                     createjs.Sound.play('unh');
+                    Plyr.injuredTime = GS.gameTime;
                 }
                 else {
                     // Player death. :(
                     createjs.Sound.play('kill');
                     Plyr.killedTime = GS.gameTime;
+                    GS.shot = GS.nullShot;
                 }
             };
 
@@ -753,6 +774,9 @@ var GateArena = new (function() {
         };
 
         GS.fire = function() {
+            if (GS.player.hitPoints == 0)
+                return;
+
             if (GS.shot.fired) {
                 if (GS.shot.outgoing) {
                     GS.shot.recall();
@@ -1032,7 +1056,7 @@ var GateArena = new (function() {
             if (p.hitPoints == 0 && GG.state.gameTime - p.killedTime > GA.BADDIE_DEATH_TIME)
                 return;
 
-            var r = 10;
+            var r = GA.PLAYER_RADIUS;
             if (p.hitPoints == 0) {
                 r += 20 * (GG.state.gameTime - p.killedTime) / GA.BADDIE_DEATH_TIME;
             }
