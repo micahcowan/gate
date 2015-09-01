@@ -774,7 +774,7 @@ var GateArena = new (function() {
         };
 
         GS.fire = function() {
-            if (GS.player.hitPoints == 0)
+            if (GS.player.hitPoints == 0 || GS.paused)
                 return;
 
             if (GS.shot.fired) {
