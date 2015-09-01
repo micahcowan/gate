@@ -143,12 +143,12 @@ var GateArena = new (function() {
             fired: false
         };
 
-        GS.Shot = function(player, time) {
+        GS.Shot = function(player, dir, time) {
             var S = this;
             this.x = player.x;
             this.y = player.y;
+            this.player = player;
 
-            var dir = player.rot;
             this.h = GA.SHOT_SPEED * Math.sin(dir);
             this.v = -GA.SHOT_SPEED * Math.cos(dir);
 
@@ -157,6 +157,7 @@ var GateArena = new (function() {
         GS.Shot.prototype = {
             fired: true,
             outgoing: true,
+            paused: false,
             update: function(delta) {
                 this.x += this.h;
                 this.y += this.v;
@@ -166,33 +167,38 @@ var GateArena = new (function() {
                     || this.y < 0
                     || this.y > GA.height) {
 
-                    // Player bullet hit a wall.
-                    // First, check if we hit any gates.
-                    var locked = false;
-                    for (var i=0; i < GS.gates.length; ++i) {
-                        if (GS.gates[i].checkCollision(this.x, this.y)) {
-                            locked = true;
-                            GS.gates[i].lock();
-                            break;
-                        }
-                    }
-                    if (!locked) createjs.Sound.play('knock');
                     this.recall();
+
+                    // FIXME: Ew. Special casing.
+                    if (this.player == GS.player) {
+                        // Player bullet hit a wall.
+                        // First, check if we hit any gates.
+                        var locked = false;
+                        for (var i=0; i < GS.gates.length; ++i) {
+                            if (GS.gates[i].checkCollision(this.x, this.y)) {
+                                locked = true;
+                                GS.gates[i].lock();
+                                break;
+                            }
+                        }
+                        if (!locked) createjs.Sound.play('knock');
+                    }
                 }
             },
             returnUpdate: function(delta) {
                 // Swapped out for update() when returning.
-                var dir = Math.atan2(GS.player.x - this.x, GS.player.y - this.y);
+                var dir = Math.atan2(this.player.x - this.x, this.player.y - this.y);
                 this.x += GA.SHOT_RETURN_SPEED * Math.sin(dir);
                 this.y += GA.SHOT_RETURN_SPEED * Math.cos(dir);
 
-                if (Math.abs(this.x - GS.player.x) <= GA.PLAYER_RADIUS
-                    && Math.abs(this.y - GS.player.y) <= GA.PLAYER_RADIUS) {
+                // FIXME: this is appropriate for player, but...
+                if (Math.abs(this.x - this.player.x) <= GA.PLAYER_RADIUS
+                    && Math.abs(this.y - this.player.y) <= GA.PLAYER_RADIUS) {
 
-                    createjs.Sound.play('slurp');
+                    if (this.player == GS.player)
+                        createjs.Sound.play('slurp');
                     
-                    // Returned to player; remove reference to self from state.
-                    GS.shot = GS.nullShot;
+                    if (this.destroy) this.destroy();
                 }
             },
             recall: function(delta) {
@@ -273,8 +279,11 @@ var GateArena = new (function() {
           , speed: 70
           , minWaitChDir: 3000
           , maxWaitChDir: 5000
+          , minWaitShot: 1000
+          , maxWaitShot: 6000
           , maxRotatePerSec: Math.PI * 3/5
           , lance: 60  // Invisible lance that keeps baddies from steering into walls.
+          , shot: GS.nullShot
           , init: function() {
                 // Initial velocity is "out the gate".
                 // We calculate the direction, "towards the center",
@@ -302,6 +311,7 @@ var GateArena = new (function() {
                 // times than the rest.
                 this.timeChDir = 500
                     + Math.random() * 1000
+                this.timeFire = this.minWaitShot + Math.random() * (this.maxWaitShot - this.minWaitShot);
 
                 this.h = this.speed * Math.sin(this.dir);
                 this.v = this.speed * Math.cos(this.dir);
@@ -311,28 +321,50 @@ var GateArena = new (function() {
                 this.y += this.v * (delta / 1000);
                 var w = this.width/2 + 2;
 
-                if (this.x < w) {
-                    this.x = w;
-                }
-                else if (this.x > GA.width - w) {
-                    this.x = GA.width - w;
-                }
-
-                if (this.y < w) {
-                    this.y = w;
-                }
-                else if (this.y > GA.height - w) {
-                    this.y = GA.height - w;
-                }
-
-                this.adjustDir(delta);
-
                 if (this.killedTime == 0) {
-                    this.checkShot();
+                    this.checkPlayerShot();
+
+                    this.adjustDir(delta);
+
+                    if (this.x < w) {
+                        this.x = w;
+                    }
+                    else if (this.x > GA.width - w) {
+                        this.x = GA.width - w;
+                    }
+
+                    if (this.y < w) {
+                        this.y = w;
+                    }
+                    else if (this.y > GA.height - w) {
+                        this.y = GA.height - w;
+                    }
+
+                    this.checkShot(delta);
+
+                    this.shot.update();
                 }
                 else if (GS.gameTime - this.killedTime >
                          GA.BADDIE_DEATH_TIME) {
                     this.killMe();
+                }
+            }
+          , checkShot: function(delta) {
+                this.timeFire -= delta;
+                if (this.shot.fired) {
+                }
+                else if (this.timeFire <= 0) {
+                    var baddie = this;
+
+                    // Fire a bullet.
+                    // Randomly for now.
+                    var dir = Math.atan2(GS.player.x - this.x, this.y - GS.player.y);
+                    this.shot = new GS.Shot(this, dir, GS.gameTime);
+                    createjs.Sound.play('shot');
+                    this.shot.destroy = function() {
+                        baddie.shot = GS.nullShot;
+                        baddie.timeFire = baddie.minWaitShot + Math.random() * (baddie.maxWaitShot - baddie.minWaitShot);
+                    };
                 }
             }
           , adjustDir: function(delta) {
@@ -461,7 +493,7 @@ var GateArena = new (function() {
                     this.dir = dirs[0];
                 }
             }
-          , checkShot: function() {
+          , checkPlayerShot: function() {
                 if (!GS.shot.fired || !GS.shot.outgoing) return;
 
                 var x = GS.shot.x;
@@ -694,7 +726,11 @@ var GateArena = new (function() {
                 }
             }
             else {
-                GS.shot = new GS.Shot(GS.player, GS.gameTime);
+                GS.shot = new GS.Shot(GS.player, GS.player.rot, GS.gameTime);
+                GS.shot.destroy = function() {
+                    // Returned to player; remove reference to self from from game state.
+                    GS.shot = GS.nullShot;
+                };
                 createjs.Sound.play('shot');
             }
         };
@@ -751,7 +787,8 @@ var GateArena = new (function() {
             'e', GS.player.moveRight
         );
         MajicKeys.onDown(
-            'Space', GS.fire
+            'Space', GS.fire,
+            'p', function() { GS.paused = !GS.paused; }
         );
     };
 
@@ -765,10 +802,13 @@ var GateArena = new (function() {
             for (var i=0; i < state.gates.length; ++i) {
                 GG.drawGate(state.gates[i]);
             }
-            GG.drawShot(delta);
+            GG.drawShot(delta, state.shot, 'red');
             GG.drawPlayer(delta);
             for (var i=0; i < state.enemies.length; ++i) {
                 GG.drawBaddie(state.enemies[i]);
+                if (state.enemies[i] && !state.enemies[i].killedTime) {
+                    GG.drawShot(delta, state.enemies[i].shot, 'rgba(0,0,128,0.45)');
+                }
             }
         };
 
@@ -812,7 +852,8 @@ var GateArena = new (function() {
             scr.save();
             if (!baddie.killedTime)
                 GG.shadow();
-            scr.fill();
+            if (!baddie.shot.fired || baddie.killedTime)
+                scr.fill();
             scr.restore();
             if (!baddie.killedTime) {
                 scr.lineWidth = 2;
@@ -821,7 +862,7 @@ var GateArena = new (function() {
             }
 
             if (!GA.debug) return;
-            // XXX: lance line
+            // lance line
             scr.beginPath();
             scr.moveTo(x, y);
             scr.lineTo(x + baddie.lance * Math.sin(baddie.dir), y + baddie.lance * Math.cos(baddie.dir));
@@ -829,7 +870,7 @@ var GateArena = new (function() {
             scr.strokeStyle = 'black';
             scr.stroke();
 
-            // XXX: Arc to desiredDir
+            // Arc to desiredDir
             scr.beginPath();
             var adj = Math.PI / 2;
             var diff = GA.diffRadians(baddie.desiredDir, baddie.dir)
@@ -920,9 +961,8 @@ var GateArena = new (function() {
             }
         };
 
-        GG.drawShot = function(delta) {
+        GG.drawShot = function(delta, shot, style) {
             var scr = GG.screen;
-            var shot = GG.state.shot;
             if (!shot.fired) return;
 
             var r = 4; // default bullet radius.
@@ -944,7 +984,7 @@ var GateArena = new (function() {
             }
 
             scr.beginPath();
-            scr.fillStyle = "red";
+            scr.fillStyle = style;
             scr.arc(shot.x, shot.y, r, 0, 2 * Math.PI);
             scr.save();
             GG.shadow();
@@ -1022,7 +1062,8 @@ var GateArena = new (function() {
         GA.now = now;
 
         MajicKeys.pulse();
-        GA.state.update(delta);
+        if (!GA.state.paused)
+            GA.state.update(delta);
         GA.graphics.update(GA.state, delta);
 
         window.setTimeout(GA.update, GA.msecsPerFrame);
