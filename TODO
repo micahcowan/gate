@@ -2,9 +2,15 @@
 
 - Game restarts
 
+- Simplified design?
+
+- "Classic" control mode
+
 - visual clues about ship damage
     . Rumble/shake? frequency-mismatched sin/cos maybe
     . offset player momentum with bullet's?
+
+- Points/Highscore
 
 - visual cue as player draws near open gate, to clue towards teleport.
 
@@ -12,3 +18,18 @@
 
 - visual/audio cues to explicitly deny teleportation to player shot, as
   this is apparently slightly perplexing.
+
+- New enemy types
+  - portal-cloggers
+  - leaders (multiple types/strategies employed?)
+  - bullies (multiple hits required)
+  - mine-layers? :)
+  - seeking-bullets (shootable, with larger shootable target than the
+    actual damaging payload)
+  - buzzsaw-on-a-leash
+
+- Power-ups?
+  - bullets curve toward baddies when near
+  - bullets that damage on the return
+  - shield
+  - slow enemies
