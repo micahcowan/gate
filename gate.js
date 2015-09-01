@@ -351,7 +351,20 @@ var GateArena = new (function() {
             }
           , checkShot: function(delta) {
                 this.timeFire -= delta;
-                if (this.shot.fired) {
+                if (GS.player.hitPoints == 0) {
+                    // Can't shoot, can't collide bullets.
+                }
+                else if (this.shot.fired) {
+                    // Check if our bullet hit the player!
+
+                    if (this.shot.outgoing
+                        && Math.abs(this.shot.x - GS.player.x) <= GA.PLAYER_RADIUS
+                        && Math.abs(this.shot.y - GS.player.y) <= GA.PLAYER_RADIUS) {
+
+                        // Hit!
+                        GS.player.hit();
+                        this.shot.recall();
+                    }
                 }
                 else if (this.timeFire <= 0) {
                     var baddie = this;
@@ -534,8 +547,16 @@ var GateArena = new (function() {
             Plyr.rotDir = 0;
             Plyr.thrust = 0;
             Plyr.thrustDir = 0;
+            Plyr.hitPoints = 3;
 
             Plyr.update = function(delta) {
+                if (Plyr.hitPoints == 0) {
+                    // Keep going with momentum, ignore everything else
+                    // (including walls)
+                    Plyr.x += Plyr.h;
+                    Plyr.y += Plyr.v;
+                    return;
+                }
                 var rd = Plyr.rotDir;
                 var step = delta/1000.0;
                 Plyr.rot += rd * GA.PLAYER_ROTATE_SPEED * step;
@@ -630,6 +651,18 @@ var GateArena = new (function() {
                 Plyr.rotDir = 0;
                 Plyr.thrust = 0;
                 Plyr.thrustDir = 0;
+            };
+
+            Plyr.hit = function() {
+                if (--Plyr.hitPoints > 0) {
+                    // FIXME: better sound?
+                    createjs.Sound.play('unh');
+                }
+                else {
+                    // Player death. :(
+                    createjs.Sound.play('kill');
+                    Plyr.killedTime = GS.gameTime;
+                }
             };
 
             Plyr.rotateLeft = function(e) {
@@ -802,7 +835,8 @@ var GateArena = new (function() {
             for (var i=0; i < state.gates.length; ++i) {
                 GG.drawGate(state.gates[i]);
             }
-            GG.drawShot(delta, state.shot, 'red');
+            if (state.player.hitPoints != 0)
+                GG.drawShot(delta, state.shot, 'red');
             GG.drawPlayer(delta);
             for (var i=0; i < state.enemies.length; ++i) {
                 GG.drawBaddie(state.enemies[i]);
@@ -995,7 +1029,13 @@ var GateArena = new (function() {
         GG.drawPlayer = function() {
             var p = GG.state.player;
             var s = GG.screen;
+            if (p.hitPoints == 0 && GG.state.gameTime - p.killedTime > GA.BADDIE_DEATH_TIME)
+                return;
+
             var r = 10;
+            if (p.hitPoints == 0) {
+                r += 20 * (GG.state.gameTime - p.killedTime) / GA.BADDIE_DEATH_TIME;
+            }
             s.beginPath();
             var x0 = 0;
             var y0 = - r * 4/3;
@@ -1014,16 +1054,26 @@ var GateArena = new (function() {
             s.lineWidth = 2;
             s.lineJoin = "miter";
             s.fillStyle = "red";
-            if (!GG.state.shot.fired) {
+            if (p.hitPoints == 0) {
+                var percent = (GG.state.gameTime - p.killedTime) /
+                                    GA.BADDIE_DEATH_TIME;
+                var alpha = 1 - percent;
+                s.fillStyle = 'rgba(128,0,0,' + alpha + ')';
+                s.save();
+                s.fill();
+                s.restore();
+            }
+            else if (!GG.state.shot.fired) {
                 s.save();
                 GG.shadow();
                 s.fill();
                 s.restore();
+                s.stroke();
             }
             else {
                 GG.shadow();
+                s.stroke();
             }
-            s.stroke();
             s.restore();
         };
     };
@@ -1038,6 +1088,7 @@ var GateArena = new (function() {
         createjs.Sound.registerSound("spawn.ogg", 'spawn');
         createjs.Sound.registerSound("open.ogg", 'open');
         createjs.Sound.registerSound("kill.ogg", 'kill');
+        createjs.Sound.registerSound("unh.ogg", 'unh');
 
         GA.screen = document.getElementById('game').getContext('2d');
         GA.width = 640;
