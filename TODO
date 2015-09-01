@@ -1,12 +1,14 @@
-- Enemies shouldn't suddenly appear in front of gate, but should run in from gate.
+- Require click to begin game
 
-- Enemies accelerate towards destinations? Cubic bezier was nice idea,
-  but using the real acceleration is too jittery, and getting cubic
-  roots for constant speed is too hard.
+- Game restarts
 
-- visual/audio cues to explicitly deny teleportation to player shot, as
-  this is apparently slightly perplexing.
+- visual clues about ship damage
+    . Rumble/shake? frequency-mismatched sin/cos maybe
+    . offset player momentum with bullet's?
 
 - visual cue as player draws near open gate, to clue towards teleport.
 
-- Fix sound in Safari (is ogg the difference?)
+- on-screen tutorial messages
+
+- visual/audio cues to explicitly deny teleportation to player shot, as
+  this is apparently slightly perplexing.
