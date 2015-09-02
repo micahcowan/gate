@@ -2,7 +2,7 @@
 
 (function() {
     var GA = (window.GateArena = window.GateArena || {});
-    var M = GA.mobs = {};
+    var mobs = GA.mobs = {};
 
-    M.background = new GA.Background();
+    mobs.background = new GA.Background();
 })();
