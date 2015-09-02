@@ -8,7 +8,7 @@
 
     G.resetThings(
         M.background
-      , new GA.Message( GA.text.clickMsg, {size: 50})
+      , new GA.Message( GA.text.clickMsg, {size: 40})
     );
 
     var newGame = function(ev) {

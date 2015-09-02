@@ -9,19 +9,21 @@
     };
     GA.text.Text.prototype = new (function() {
         this.toString = this.toLocaleString = function() {
+            if (this.selectedText !== undefined)
+                return this.selectedText;
             var langs = ['en-US'];
-            if (this.navigator && this.navigator.languages) {
-                langs = this.navigator.languages;
+            if (window.navigator && window.navigator.languages) {
+                langs = window.navigator.languages;
             }
             for (var i = 0; i != langs.length; ++i) {
                 if (this.msgs[langs[i]] !== undefined)
-                    return this.msgs[langs[i]];
+                    return this.selectedText = this.msgs[langs[i]];
             }
             for (var i = 0; i != langs.length; ++i) {
                 var gen = langs[i];
                 gen = gen[0] + gen[1];
                 if (this.msgs[gen] !== undefined)
-                    return this.msgs[gen];
+                    return this.selectedText = this.msgs[gen];
             }
         };
     })();
