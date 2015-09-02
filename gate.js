@@ -15,7 +15,7 @@
         G.removeEventListener('click', newGame);
         GA.player = new GA.obj.Player();
         GA.gates = new O.GateGroup();
-        GA.bullets = new O.BulletGroup();
+        GA.bullets = [];
         GA.enemies = O.EnemyGroup();
         G.resetThings(
             O.background
