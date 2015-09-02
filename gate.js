@@ -3,54 +3,34 @@
 (function() {
     var GA = (window.GateArena ||= {});
 
-    var g = GA.game = new MicahGame();
-    var o = GA.obj;
+    var G = GA.game = new MicahGame();
+    var O = GA.obj;
 
-    g.resetThings(
-        o.background
-      , new o.Message( GA.text.clickMsg, {size: 50})
+    G.resetThings(
+        O.background
+      , new O.Message( GA.text.clickMsg, {size: 50})
     );
 
     var newGame = function(ev) {
-        g.removeEventListener('click', newGame);
+        G.removeEventListener('click', newGame);
         GA.player = new GA.obj.Player();
-        GA.gates = new o.GateGroup();
-        GA.bullets = [];
-        GA.enemies = o.EnemyGroup();
-        g.resetThings(
-            o.background
+        GA.gates = new O.GateGroup();
+        GA.bullets = new O.BulletGroup();
+        GA.enemies = O.EnemyGroup();
+        G.resetThings(
+            O.background
           , GA.gates
-          , [ 'bullets', GA.bullets ]
+          , GA.bullets
           , GA.player
           , GA.enemies
         );
     };
     GA.newGame = newGame;
-
-    function p(fnam) {
-        return function(ev) {
-            if (!GA.game.paused && GA.player.alive)
-                GA.player.behavior[fnam]();
-        };
-    }
-    MajicKeys.connect(
-        'a',            p('rotateLeft')
-      , 'd',            p('rotateRight')
-      , 'w',            p('doThrust')
-      , 's',            p('doReverse')
-      , 'ArrowLeft',    p('rotateLeft')
-      , 'ArrowRight',   p('rotateRight')
-      , 'ArrowUp',      p('doThrust')
-      , 'ArrowDown',    p('doReverse')
-      , 'q',            p('moveLeft')
-      , 'e',            p('moveRight')
-    );
     MajicKeys.onDown(
-        'Space',        function(){ GA.player.fire(); }
-      , 'p',            function(){ g.pause(); }
+        'p',            function() { G.pause(); }
     );
 
-    g.addEventListener('click', newGame);
+    G.addEventListener('click', newGame);
 
-    g.start();
+    G.start();
 })();
