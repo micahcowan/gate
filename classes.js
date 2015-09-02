@@ -2,11 +2,10 @@
 
 (function() {
     var GA = (window.GateArena = window.GateArena || {});
-    var O = GA.obj = {};
 
     var objproto = new MicahGame.Thing;
 
-    O.Message = function(msg, info) {
+    GA.Message = function(msg, info) {
         this.text = msg;
 
         if (info.size !== undefined)
@@ -14,12 +13,10 @@
 
         this.draw = GA.art.drawMessage;
     };
-    O.Message.prototype = objproto;
+    GA.Message.prototype = objproto;
 
-    O.Background = function() {
+    GA.Background = function() {
         this.draw = GA.art.drawBackground;
     };
-    O.Background.prototype = objproto;
-
-    O.background = new O.Background();
+    GA.Background.prototype = objproto;
 })();

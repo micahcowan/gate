@@ -4,21 +4,21 @@
     var GA = (window.GateArena = window.GateArena || {});
 
     var G = GA.game = new MicahGame();
-    var O = GA.obj;
+    var M = GA.mobs;
 
     G.resetThings(
-        O.background
-      , new O.Message( GA.text.clickMsg, {size: 50})
+        M.background
+      , new GA.Message( GA.text.clickMsg, {size: 50})
     );
 
     var newGame = function(ev) {
         G.removeEventListener('click', newGame);
-        GA.player = new GA.obj.Player();
-        GA.gates = new O.GateGroup();
+        GA.player = new GA.Player();
+        GA.gates = new GA.GateGroup();
         GA.bullets = [];
-        GA.enemies = O.EnemyGroup();
+        GA.enemies = GA.EnemyGroup();
         G.resetThings(
-            O.background
+            M.background
           , GA.gates
           , GA.bullets
           , GA.player
