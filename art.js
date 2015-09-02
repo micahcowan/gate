@@ -1,10 +1,14 @@
 "use strict";
 
 (function() {
-    var GA = (window.GateArena ||= {});
+    var GA = (window.GateArena = window.GateArena || {});
     GA.art = {};
 
-    var GA.art.drawBackground = function(s) {
+    // NOTE: In all the draw*() functions below, "this" refers to an
+    // whatever object has adopted it as a method, and NOT the
+    // surrounding context.
+
+    GA.art.drawBackground = function(s) {
         s.fillStyle = this.fillStyle || "#EEE";
         s.fillRect(0, 0, s.canvas.width, s.canvas.height);
 
@@ -15,7 +19,7 @@
         s.strokeStyle = this.strokeStyle || "#C0C0D0";
 
         var offset;
-        if (Units !== undefined) // FIXME: Implement Units
+        if (window.Units !== undefined) // FIXME: Implement Units
             offset = Units.now().mul(moveSpeed).asUnit() % gridSize;
         else
             offset = (new Date() / 1000) * moveSpeed % gridSize;
@@ -34,5 +38,21 @@
             s.lineTo(width,y);
             s.stroke();
         }
+    };
+
+    GA.art.drawMessage = function(s) {
+        var G = GA.game;
+        var msg = this.text;
+        var size = this.size || 20;
+        var x = this.x || G.width/2;
+        var y = this.y || G.height/2;
+        s.font = size + 'px Arial Black, Helvetica, sans-serif';
+        s.lineWidth = 5;
+        s.lineJoin = 'round';
+        s.textAlign = 'center';
+        s.strokeStyle = 'white';
+        s.fillStyle = 'black';
+        s.strokeText(msg, x, y);
+        s.fillText(msg, x, y);
     };
 })();

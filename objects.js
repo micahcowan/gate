@@ -1,7 +1,7 @@
 "use strict";
 
 (function() {
-    var GA = (window.GateArena ||= {});
+    var GA = (window.GateArena = window.GateArena || {});
     var O = GA.obj = {};
 
     var objproto = new MicahGame.Thing;

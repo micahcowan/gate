@@ -1,7 +1,7 @@
 "use strict";
 
 (function() {
-    var GA = (window.GateArena ||= {});
+    var GA = (window.GateArena = window.GateArena || {});
 
     var G = GA.game = new MicahGame();
     var O = GA.obj;
@@ -32,5 +32,5 @@
 
     G.addEventListener('click', newGame);
 
-    G.start();
+    window.addEventListener('load', G.start.bind(G));
 })();
