@@ -30,13 +30,11 @@ var MajicGame = (function() {
                 }
             }
         };
-        this.eventHandler = function(tag, e) {
+        this.eventHandler = function(tag, ev) {
             var e = this._events;
             var f = e[tag];
             if (f !== undefined) {
-                for (var i=0; i != f.length; ++i) {
-                    f[i](e);
-                }
+                f.forEach(function(iter) {iter(ev);});
             }
         };
         this.resetSprites = function() {
@@ -66,9 +64,8 @@ var MajicGame = (function() {
             }
 
             // Draw things
-            for (var i=0; i != this._things.length; ++i) {
-                this._things[i].draw(this.screen);
-            }
+            var screen = this.screen;
+            this._things.forEach(function(thing) {thing.draw(screen)});
 
             var msecsPerFrame = 1000 / this.framesPerSec;
             window.setTimeout(this.tick.bind(this), msecsPerFrame);
@@ -84,7 +81,7 @@ var MajicGame = (function() {
         mergeData:
             function(data) {
                 if (!data) return;
-                for (key in data) {
+                for (var key in data) {
                     this[key] = data[key];
                 }
             }
@@ -100,6 +97,7 @@ var MajicGame = (function() {
             }
         };
         newClass.prototype = MajicGame.spritePrototype;
+        return newClass;
     };
 
     MajicGame.behavior = {

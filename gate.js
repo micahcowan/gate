@@ -20,10 +20,11 @@
         S.enemies = GA.EnemyGroup();
         G.resetSprites(
             Sp.background
-          , GA.gates
-          , GA.bullets
-          , GA.player
-          , GA.enemies
+          , S.player
+          , S.gates
+          , S.bullets
+          , S.player
+          , S.enemies
         );
     };
     GA.newGame = newGame;
