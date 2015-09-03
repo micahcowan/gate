@@ -6,7 +6,7 @@ var MajicUnits = (function() {
     _U.prototype = UnitsTopProto;
     var U = new _U;
 
-    var UnitValue = function(value, numUnits, denomUnits) {
+    var UnitValue = U.UnitValue = function(value, numUnits, denomUnits) {
         // XXX: should protect num/denom by setting all their properties
         // read-only
         this._value = value;
@@ -65,6 +65,26 @@ var MajicUnits = (function() {
             function(uval) {
                 return this.mul(uval.inverse);
             }
+      , add:
+            function(uval) {
+                // FIXME: If we're going to use this, we need tags to be
+                // much more predictable, and guarantee unique nicks.
+                if (uval.typeTag() != this.typeTag())
+                    uval.as( this ); // Expected to raise an exception.
+                this._value += uval._value;
+            }
+      , sub:
+            function(uval) {
+                // FIXME: If we're going to use this, we need tags to be
+                // much more predictable, and guarantee unique nicks.
+                if (uval.typeTag() != this.typeTag())
+                    uval.as( this ); // Expected to raise an exception.
+                this._value -= uval._value;
+            }
+      , set:
+            function(val) {
+                this._value = 0 + val;
+            }
       , get inverse() {
                 return new UnitValue(1 / this._value, this._denomUnits, this._numUnits);
             }
@@ -77,7 +97,6 @@ var MajicUnits = (function() {
       , as:
             function(div) {
                 var result = this.div( div );
-                result._value = this._value; // We don't want to change numbers, just units.
                 if (result.extractable)
                     return result.valueOf();
                 else {

@@ -6,7 +6,7 @@
     var G = GA.game = new MajicGame();
     var Sp = GA.sprites;
 
-    G.resetThings(
+    G.resetSprites(
         Sp.background
       , new GA.Message( GA.text.clickMsg, {size: 40})
     );
@@ -18,7 +18,7 @@
         S.gates = new GA.GateGroup();
         S.bullets = [];
         S.enemies = GA.EnemyGroup();
-        G.resetThings(
+        G.resetSprites(
             Sp.background
           , GA.gates
           , GA.bullets

@@ -2,17 +2,15 @@
 
 (function() {
     var GA = (window.GateArena = window.GateArena || {});
+    var G = MajicGame;
     var U = MajicUnits;
     var B = MajicGame.behavior;
     var sprites = GA.sprites = {};
-    var objproto = new MajicGame.Sprite;
 
     sprites.background = new GA.Background();
 
-    sprites.Player = makeSpriteClass({
+    sprites.Player = G.makeSpriteClass({
         size: U.pixels( 12 )
-      , x: GateArena.game.width / 2
-      , y: GateArena.game.height / 2 
       , rot: U.radians( Math.PI /4 ).per.second
       , vel: U.pixels( 10 ).per.second
 
@@ -34,5 +32,11 @@
             ]
 
       , draw: GA.art.drawPlayer
+    },
+    function(){
+        this.mergeData({
+            x: GateArena.game.width / 2
+          , y: GateArena.game.height / 2
+        });
     });
 })();

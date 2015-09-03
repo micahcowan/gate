@@ -1,7 +1,9 @@
 "use strict";
 
-(function() {
-    function MajicGame() {}
+var MajicGame = (function() {
+    var U = MajicUnits;
+
+    var MajicGame = function() {};
     MajicGame.prototype = new (function () {
         // FIXME: Event handling stuff should go in an ancestor class.
         this.addEventListener = function(eTag, handler) {
@@ -37,7 +39,7 @@
                 }
             }
         };
-        this.resetThings = function() {
+        this.resetSprites = function() {
             this._things = [];
             this._things.push.apply(this._things, arguments);
         };
@@ -77,8 +79,44 @@
         this.paused = false;
     })();
 
-    MajicGame.Sprite = function() {
+    MajicGame.Sprite = function() {};
+    MajicGame.Sprite.prototype = {
+        mergeData:
+            function(data) {
+                if (!data) return;
+                for (key in data) {
+                    this[key] = data[key];
+                }
+            }
     };
 
-    window.MajicGame = MajicGame;
+    MajicGame.spritePrototype = new MajicGame.Sprite;
+
+    MajicGame.makeSpriteClass = function(data, initfn) {
+        var newClass = function() {
+            this.mergeData(data);
+            if (initfn) {
+                initfn.apply(this, arguments);
+            }
+        };
+        newClass.prototype = MajicGame.spritePrototype;
+    };
+
+    MajicGame.behavior = {
+        friction:
+            function(value) {
+                if (!(value instanceof U.UnitValue)) {
+                    value = U.pixels(value).per.second.per.second;
+                }
+                return function(delta) {
+                    // FIXME: right now, only handles rotation/velocity,
+                    // not h/v
+                    this.vel.sub( value.mul( delta ) );
+                    if (this.vel.as( U.pixel.per.second ) < 0)
+                        this.vel.set(0);
+                };
+            }
+    };
+
+    return MajicGame;
 })();
