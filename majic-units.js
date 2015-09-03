@@ -61,20 +61,36 @@ var MajicUnits = (function() {
                     return new UnitValue(this._value * x, this._numUnits, this._denomUnits);
                 }
             }
+      , div:
+            function(uval) {
+                return this.mul(uval.inverse);
+            }
+      , get inverse() {
+                return new UnitValue(1 / this._value, this._denomUnits, this._numUnits);
+            }
       , get per() {
                 return new UnitPer(this);
             }
-      , get as() {
-                // return new UnitAs(this);
-                return new UnitPer(this);
+      , get extractable() {
+                return Object.keys(this._numUnits).length == 0 && Object.keys(this._denomUnits).length == 0;
+            }
+      , as:
+            function(div) {
+                var result = this.div( div );
+                result._value = this._value; // We don't want to change numbers, just units.
+                if (result.extractable)
+                    return result.valueOf();
+                else {
+                    throw "Can't extract as " + this._value + " " + div.typeTag() + "; value is in " + this.typeTag();
+                }
             }
       , valueOf:
             function() {
-                if (Object.keys(this._numUnits).length == 0 && Object.keys(this._denomUnits).length == 0) {
+                if (this.extractable) {
                     return this._value;
                 }
                 else {
-                    throw "Can't produce a value: nums " + this._numUnits.toString() + ", denoms " + this._denomUnits;
+                    throw "Can't produce a value: value is in " + this.typeTag();
                 }
             }
       , toString:
@@ -114,6 +130,11 @@ var MajicUnits = (function() {
                 return ret;
             }
     };
+
+    UnitsTopProto.units = function(val) {
+        return new UnitValue(val, {}, {});
+    };
+    UnitsTopProto.unit = UnitsTopProto.units(1);
 
     var UnitPer = function(unitValue) {
         this.unitValue = unitValue;
