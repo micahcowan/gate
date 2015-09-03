@@ -1,8 +1,8 @@
 "use strict";
 
 (function() {
-    function MicahGame() {}
-    MicahGame.prototype = new (function () {
+    function MajicGame() {}
+    MajicGame.prototype = new (function () {
         // FIXME: Event handling stuff should go in an ancestor class.
         this.addEventListener = function(eTag, handler) {
             var e = this._events = (this._events || {});
@@ -30,7 +30,7 @@
         };
         this.eventHandler = function(tag, e) {
             var e = this._events;
-            var f = e[eTag];
+            var f = e[tag];
             if (f !== undefined) {
                 for (var i=0; i != f.length; ++i) {
                     f[i](e);
@@ -42,7 +42,7 @@
             this._things.push.apply(this._things, arguments);
         };
         this.start = function() {
-            // XXX Use Units.
+            // XXX Use MajicUnits.
             var msecsPerFrame = 1000 / this.framesPerSec;
             this.timeElapsed = 0;
             this.now = new Date();
@@ -73,12 +73,12 @@
         }
 
         this.framesPerSec = 50;
-        this.maxMsecsPerFrame = 2 * (1000 / this.framesPerSec); // XXX Units
+        this.maxMsecsPerFrame = 2 * (1000 / this.framesPerSec); // XXX MajicUnits
         this.paused = false;
     })();
 
-    MicahGame.Thing = function() {
+    MajicGame.Sprite = function() {
     };
 
-    window.MicahGame = MicahGame;
+    window.MajicGame = MajicGame;
 })();

@@ -19,10 +19,7 @@
         s.strokeStyle = this.strokeStyle || "#C0C0D0";
 
         var offset;
-        if (window.Units !== undefined) // FIXME: Implement Units
-            offset = Units.now().mul(moveSpeed).asUnit() % gridSize;
-        else
-            offset = (new Date() / 1000) * moveSpeed % gridSize;
+        offset = (new Date() / 1000) * moveSpeed % gridSize; // Use MajicUnits
 
         var width = s.canvas.width;
         var height = s.canvas.height;

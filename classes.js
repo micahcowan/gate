@@ -3,7 +3,7 @@
 (function() {
     var GA = (window.GateArena = window.GateArena || {});
 
-    var objproto = new MicahGame.Thing;
+    var objproto = new MajicGame.Sprite;
 
     GA.Text = function(msgs) {
         this.msgs = msgs;
@@ -38,6 +38,14 @@
         this.draw = GA.art.drawMessage;
     };
     GA.Message.prototype = objproto;
+
+    GA.EnemyGroup = function() {
+    };
+    GA.EnemyGroup.prototype = [];
+
+    GA.GateGroup = function() {
+    };
+    GA.GateGroup.prototype = [];
 
     GA.Background = function() {
         this.draw = GA.art.drawBackground;

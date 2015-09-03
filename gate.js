@@ -3,22 +3,23 @@
 (function() {
     var GA = (window.GateArena = window.GateArena || {});
 
-    var G = GA.game = new MicahGame();
-    var M = GA.mobs;
+    var G = GA.game = new MajicGame();
+    var Sp = GA.sprites;
 
     G.resetThings(
-        M.background
+        Sp.background
       , new GA.Message( GA.text.clickMsg, {size: 40})
     );
 
     var newGame = function(ev) {
         G.removeEventListener('click', newGame);
-        GA.player = new GA.Player();
-        GA.gates = new GA.GateGroup();
-        GA.bullets = [];
-        GA.enemies = GA.EnemyGroup();
+        var S = GA.state = {};
+        S.player = new Sp.Player();
+        S.gates = new GA.GateGroup();
+        S.bullets = [];
+        S.enemies = GA.EnemyGroup();
         G.resetThings(
-            M.background
+            Sp.background
           , GA.gates
           , GA.bullets
           , GA.player
