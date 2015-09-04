@@ -27,8 +27,29 @@
         );
     };
     GA.newGame = newGame;
-    GA.mk = (new MajicKeys).onDown(
-        'p',            function() { G.paused = !G.paused; }
+    GA.mk = new MajicKeys;
+    GA.mk.onDown(
+        'p', function() { G.paused = !G.paused; }
+
+        // Fullscreen support:
+      , 'f', function() {
+                 var c = document.getElementById('gameContainer');
+                 if (c.requestFullScreen) {
+                     c.requestFullScreen();
+                 }
+                 else {
+                     // Find which of mozRequestFullScreen, etc is
+                     // available, and then call it.
+                     var done = false;
+                     ['moz','webkit','ms'].forEach(function(pfx){
+                         var fn = c[pfx + 'RequestFullScreen'];
+                         if (fn) {
+                             fn.bind(c)();
+                             done = true;
+                         }
+                     });
+                 }
+             }
     );
 
     G.addEventListener('click', newGame);

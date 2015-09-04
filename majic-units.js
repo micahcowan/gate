@@ -217,7 +217,7 @@ var MajicUnits = (function() {
 
     UnitsTopProto.addUnitType = function(typeAry) {
         var label = typeAry[0];
-        var plural = label + (label.endsWith('s')? 'es' : 's');
+        var plural = label + (label.match(/s$/)? 'es' : 's');
 
         var type = {
             label: label,
@@ -254,18 +254,6 @@ var MajicUnits = (function() {
                      return this[plural](1);
                  }
         });
-
-        if (false) {
-        // Add properties to .as
-        UnitAs.prototype[plural] = function(x) {
-            return this.unitValue.mul(new Unit(1 * x, {}, {label}));
-        };
-        Object.defineProperty(UnitAs.prototype, label, {
-            get: function(x) {
-                     return this[plural](1);
-                 }
-        });
-        }
     };
 
     var types = [
