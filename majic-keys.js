@@ -1,12 +1,17 @@
 "use strict";
 
-var MajicKeys = new (function() {
+var MajicKeys = function() {
     var MK = this;
 
     MK.connections = {};
     MK.downs = {};
     MK.ups = {};
     MK.keys = {};
+
+    MK.destroy = function() {
+        window.removeEventListener('keydown', MK.handleKeyDown);
+        window.removeEventListener('keyup', MK.handleKeyUp);
+    };
 
     MK.connect = function() {
         var alen = arguments.length;
@@ -115,4 +120,4 @@ var MajicKeys = new (function() {
 
     window.addEventListener('keydown', MK.handleKeyDown);
     window.addEventListener('keyup', MK.handleKeyUp);
-})();
+};

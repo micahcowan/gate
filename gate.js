@@ -17,7 +17,7 @@
         S.player = new Sp.Player();
         S.gates = new GA.GateGroup();
         S.bullets = [];
-        S.enemies = GA.EnemyGroup();
+        S.enemies = new GA.EnemyGroup();
         G.resetSprites(
             Sp.background
           , S.player
@@ -28,7 +28,7 @@
         );
     };
     GA.newGame = newGame;
-    MajicKeys.onDown(
+    GA.mk = (new MajicKeys).onDown(
         'p',            function() { G.pause(); }
     );
 

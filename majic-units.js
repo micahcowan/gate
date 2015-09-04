@@ -6,6 +6,10 @@ var MajicUnits = (function() {
     _U.prototype = UnitsTopProto;
     var U = new _U;
 
+    UnitsTopProto.now = function() {
+        return U.milliseconds( Date.now().valueOf() );
+    }
+
     var UnitValue = U.UnitValue = function(value, numUnits, denomUnits) {
         // XXX: should protect num/denom by setting all their properties
         // read-only
@@ -14,7 +18,17 @@ var MajicUnits = (function() {
         this._denomUnits = denomUnits;
     };
     UnitValue.prototype = {
-        mul:
+        relax:
+            function() {
+                if (arguments.length > 0) {
+                    this._relax = arguments[0];
+                }
+                else {
+                    this._relax = true;
+                }
+                return this;
+            }
+      , mul:
             function(x) {
                 if (x instanceof UnitValue) {
                     var newNum = {};
@@ -55,15 +69,18 @@ var MajicUnits = (function() {
                         }
                     }
 
-                    return new UnitValue(this._value * x._value, newNum, newDenom);
+                    return (new UnitValue(this._value * x._value, newNum, newDenom));
                 }
                 else {
-                    return new UnitValue(this._value * x, this._numUnits, this._denomUnits);
+                    return (new UnitValue(this._value * x, this._numUnits, this._denomUnits));
                 }
             }
       , div:
             function(uval) {
-                return this.mul(uval.inverse);
+                if (uval instanceof UnitValue)
+                    return this.mul(uval.inverse);
+                else
+                    return this.mul(1/uval);
             }
       , add:
             function(uval) {
@@ -71,7 +88,7 @@ var MajicUnits = (function() {
                 // much more predictable, and guarantee unique nicks.
                 if (uval.typeTag() != this.typeTag())
                     uval.as( this ); // Expected to raise an exception.
-                this._value += uval._value;
+                return new UnitValue(this._value + uval._value, this._numUnits, this._denomUnits);
             }
       , sub:
             function(uval) {
@@ -79,20 +96,20 @@ var MajicUnits = (function() {
                 // much more predictable, and guarantee unique nicks.
                 if (uval.typeTag() != this.typeTag())
                     uval.as( this ); // Expected to raise an exception.
-                this._value -= uval._value;
+                return new UnitValue(this._value - uval._value, this._numUnits, this._denomUnits);
             }
       , set:
             function(val) {
                 this._value = 0 + val;
             }
       , get inverse() {
-                return new UnitValue(1 / this._value, this._denomUnits, this._numUnits);
+                return (new UnitValue(1 / this._value, this._denomUnits, this._numUnits));
             }
       , get per() {
                 return new UnitPer(this);
             }
       , get extractable() {
-                return Object.keys(this._numUnits).length == 0 && Object.keys(this._denomUnits).length == 0;
+                return this._relax || Object.keys(this._numUnits).length == 0 && Object.keys(this._denomUnits).length == 0;
             }
       , as:
             function(div) {
@@ -243,6 +260,7 @@ var MajicUnits = (function() {
         ['pixel', 'px']
       , ['radian', 'rad']
       , ['second', 's']
+      , ['frame', 'f']
     ];
     for (var i=0; i != types.length; ++i) {
         U.addUnitType(types[i]);
