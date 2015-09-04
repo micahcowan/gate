@@ -7,12 +7,24 @@ var MajicUnits = (function() {
     var U = new _U;
 
     UnitsTopProto.now = function() {
-        return U.milliseconds( Date.now().valueOf() );
+        return U.milliseconds( (new Date).valueOf() );
     }
 
     var UnitValue = U.UnitValue = function(value, numUnits, denomUnits) {
         // XXX: should protect num/denom by setting all their properties
         // read-only
+
+        // FIXME: kludge for radians. Should have a hook system if more
+        // of these arise.
+        if (Object.keys(numUnits).length == 1 && 'radian' in numUnits) {
+            if (value < 0) {
+                value = 2 * Math.PI + (value % (2 * Math.PI));
+            }
+            else {
+                value = value % (2 * Math.PI);
+            }
+        }
+
         this._value = value;
         this._numUnits = numUnits;
         this._denomUnits = denomUnits;

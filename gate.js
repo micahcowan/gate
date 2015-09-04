@@ -20,7 +20,6 @@
         S.enemies = new GA.EnemyGroup();
         G.resetSprites(
             Sp.background
-          , S.player
           , S.gates
           , S.bullets
           , S.player
@@ -29,7 +28,7 @@
     };
     GA.newGame = newGame;
     GA.mk = (new MajicKeys).onDown(
-        'p',            function() { G.pause(); }
+        'p',            function() { G.paused = !G.paused; }
     );
 
     G.addEventListener('click', newGame);

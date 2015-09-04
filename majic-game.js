@@ -42,8 +42,7 @@ var MajicGame = (function() {
             this._things.push.apply(this._things, arguments);
         };
         this.start = function() {
-            // XXX Use MajicUnits.
-            var msecsPerFrame = 1000 / this.targetFrameRate;
+            var msecsPerFrame = this.targetFrameRate.inverse.as( U.millisecond.per.frame );
             this.timeElapsed = U.seconds( 0 );
             this.now = U.now();
 
@@ -56,23 +55,24 @@ var MajicGame = (function() {
         };
         this.tick = function() {
             var secsPerFrame = this.targetFrameRate.inverse;
+            var delta;
             if (!this.paused) {
                 var now = U.now();
-                var delta = now.sub(this.now);
+                delta = now.sub(this.now);
                 var maxDelta = secsPerFrame.mul(this.maxSkippedFrames);
                 if (delta.as(U.millisecond) > maxDelta.as(U.millisecond))
                     delta = maxDelta;
                 this.now = now;
                 this.timeElapsed = this.timeElapsed.add(delta);
-            }
 
-            // Behave things
-            this._things.forEach(function(thing) {
-                if (!thing.behavior) return;
-                thing.behavior.forEach(function(b) {
-                    b.call(thing, delta);
+                // Behave things
+                this._things.forEach(function(thing) {
+                    if (!thing.behavior) return;
+                    thing.behavior.forEach(function(b) {
+                        b.call(thing, delta.mul(1));
+                    });
                 });
-            });
+            }
 
             // Draw things
             var screen = this.screen;
@@ -80,7 +80,7 @@ var MajicGame = (function() {
                 if (thing.draw) thing.draw(screen)
             });
 
-            var msecsPerFrame = 1000 / this.targetFrameRate;
+            var msecsPerFrame = this.targetFrameRate.inverse.as( U.millisecond.per.frame );
             window.setTimeout(this.tick.bind(this), msecsPerFrame);
         }
 
