@@ -3,7 +3,18 @@
 var MajicGame = (function() {
     var U = MajicUnits;
 
-    var MajicGame = function() {};
+    var MajicGame = function(canvas) {
+        this.canvas = canvas;
+        this.screen = canvas.getContext('2d');
+        this.width = U.pixels( canvas.width ).relax();
+        this.height = U.pixels( canvas.height ).relax();
+        // Useful as sprite spawn point:
+        this.center = {
+            x: this.width.div(2).relax()
+          , y: this.height.div(2).relax()
+        };
+
+    };
     MajicGame.prototype = new (function () {
         // FIXME: Event handling stuff should go in an ancestor class.
         this.addEventListener = function(eTag, handler) {
@@ -45,11 +56,6 @@ var MajicGame = (function() {
             var msecsPerFrame = this.targetFrameRate.inverse.as( U.millisecond.per.frame );
             this.timeElapsed = U.seconds( 0 );
             this.now = U.now();
-
-            this.canvas = document.getElementById('game');
-            this.screen = this.canvas.getContext('2d');
-            this.width = U.pixels( this.canvas.width ).relax();
-            this.height = U.pixels( this.canvas.height ).relax();
 
             window.setTimeout(this.tick.bind(this), msecsPerFrame);
         };
@@ -108,20 +114,21 @@ var MajicGame = (function() {
                     if (item.destroy) item.destroy();
                 });
             }
+      // Initial defaults:
+      , x: U.pixels( 0 ).relax()
+      , y: U.pixels( 0 ).relax()
+      , h: U.pixels( 0 ).per.second
+      , v: U.pixels( 0 ).per.second
+      , rot: U.radians( 0 )
     };
 
     MajicGame.spritePrototype = new MajicGame.Sprite;
 
     MajicGame.makeSpriteClass = function(data, initfn) {
-        var newClass = function() {
-            this.mergeData({
-                x: U.pixels( 0 )
-              , y: U.pixels( 0 )
-              , h: U.pixels( 0 ).per.second
-              , v: U.pixels( 0 ).per.second
-              , rot: U.radians( 0 )
-            });
+        var newClass = function(ctorData) {
             this.mergeData(data);
+            if (ctorData)
+                this.mergeData(ctorData);
             if (initfn) {
                 initfn.apply(this, arguments);
             }

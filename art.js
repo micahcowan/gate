@@ -49,8 +49,8 @@
         var G = GA.game;
         var msg = this.text;
         var size = this.size || 20;
-        var x = this.x || G.width/2;
-        var y = this.y || G.height/2;
+        var x = this.x;
+        var y = this.y;
         s.font = size + 'px Arial Black, Helvetica, sans-serif';
         s.lineWidth = 5;
         s.lineJoin = 'round';

@@ -1,9 +1,9 @@
 "use strict";
 
-(function() {
+window.addEventListener('load', function() {
     var GA = (window.GateArena = window.GateArena || {});
 
-    var G = GA.game = new MajicGame();
+    var G = GA.game = new MajicGame(document.getElementById('game'));
     var Sp = GA.sprites;
 
     G.resetSprites(
@@ -14,7 +14,7 @@
     var newGame = function(ev) {
         G.removeEventListener('click', newGame);
         var S = GA.state = {};
-        S.player = new Sp.Player();
+        S.player = new Sp.Player(G.center);
         S.gates = new GA.GateGroup();
         S.bullets = [];
         S.enemies = new GA.EnemyGroup();
@@ -54,5 +54,5 @@
 
     G.addEventListener('click', newGame);
 
-    window.addEventListener('load', G.start.bind(G));
-})();
+    G.start();
+});

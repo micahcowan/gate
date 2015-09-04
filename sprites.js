@@ -12,11 +12,6 @@
     sprites.Player = G.makeSpriteClass({
         size: U.pixels( 12 )
       , hitPoints: 3
-        /*
-      , rot: U.radians( Math.PI /4 )
-      , h: U.pixels( 50 ).per.second
-      , v: U.pixels( 50 ).per.second
-      */
 
       , behavior: [
             B.momentum
@@ -67,11 +62,5 @@
             ]
 
       , draw: GA.art.drawPlayer
-    },
-    function(){
-        this.mergeData({
-            x: GateArena.game.width.div(2).relax()
-          , y: GateArena.game.height.div(2).relax()
-        });
     });
 })();

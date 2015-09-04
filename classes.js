@@ -32,6 +32,8 @@
     GA.Message = function(msg, info) {
         this.text = msg;
 
+        this.mergeData(GateArena.game.center);
+
         if (info.size !== undefined)
             this.size = info.size;
 
