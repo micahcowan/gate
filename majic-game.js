@@ -114,6 +114,13 @@ var MajicGame = (function() {
 
     MajicGame.makeSpriteClass = function(data, initfn) {
         var newClass = function() {
+            this.mergeData({
+                x: U.pixels( 0 )
+              , y: U.pixels( 0 )
+              , h: U.pixels( 0 ).per.second
+              , v: U.pixels( 0 ).per.second
+              , rot: U.radians( 0 )
+            });
             this.mergeData(data);
             if (initfn) {
                 initfn.apply(this, arguments);
@@ -138,24 +145,23 @@ var MajicGame = (function() {
                     value = U.pixels(value).per.second.per.second;
                 }
                 return function(delta) {
-                    var h = this.h.mul(delta).as( U.pixel );
-                    var v = this.v.mul(delta).as( U.pixel );
-                    var dir = Math.atan2(h, v);
-                    var mult = value.mul(delta).relax();
-                    var dh = mult * Math.sin(dir);
-                    var dv = mult * Math.cos(dir);
-                    if (Math.abs(dh) > Math.abs(h))
-                        this.h = U.pixels( 0 ).per.second;
+                    var h = this.h.as( U.pixel.per.second );
+                    var v = this.v.as( U.pixel.per.second );
+                    var spd = U.pixels( Math.sqrt(h*h + v*v) ).per.second;
+                    var reduct = value.mul(delta);
+                    if (spd.as( U.pixel.per.second ) < reduct.as( U.pixel.per.second ))
+                        spd = U.pixels( 0 ).per.second;
                     else
-                        this.h = this.h.sub( U.pixels( dh ).per.second );
+                        spd = spd.sub( reduct );
 
-                    if (Math.abs(dv) > Math.abs(v))
-                        this.v = U.pixels( 0 ).per.second;
-                    else
-                        this.v = this.v.sub( U.pixels( dv ).per.second );
+                    var dir = Math.atan2(h, v);
+                    this.h = spd.mul( Math.sin(dir) );
+                    this.v = spd.mul( Math.cos(dir) );
                 };
             }
       , rotateKeys:
+            // rotateKeys and thrustKeys have too much in common. Farm
+            // it out (probably mostly into MajicKeys?)
             function(keys, strength) {
                 var mk = new MajicKeys;
                 var tracker = {};
@@ -176,6 +182,9 @@ var MajicGame = (function() {
                     });
                 });
                 var retval = function(delta) {
+                    // FIXME: instead of manually emptying, keep a
+                    // reference to something that contains tracker, and
+                    // then replace the inner ref with {}
                     for (var key in tracker) {
                         tracker[key] = false;
                     }
@@ -190,9 +199,67 @@ var MajicGame = (function() {
             }
       , thrustKeys:
             function(keys, strength) {
-                function thrust(h, v) {
-                }
+                var mk = new MajicKeys;
+                var tracker = {};
+                var sideToAngle = {
+                    forward:    0
+                  , back:       Math.PI
+                  , left:       Math.PI * 3/2
+                  , right:      Math.PI / 2
+                };
+                var mkhandler = function(tag) {
+                    return function(e) {
+                        tracker[tag] = true;
+                    };
+                };
+                Object.keys(sideToAngle).forEach(function(side){
+                    if (!(side in keys)) return;
+                    var k;
+                    if (keys[side] instanceof Array)
+                        k = keys[side];
+                    else
+                        k = [keys[side]];
+                    k.forEach(function(key) {
+                        mk.connect(key, mkhandler(side));
+                    });
+                });
+                var retval = function(delta) {
+                    var sprite = this;
+                    for (var key in tracker) {
+                        tracker[key] = false;
+                    }
+                    mk.pulse();
+                    var dir = this.rot.as( U.radian );
+                    var adjStr = strength.mul( delta );
+                    Object.keys(sideToAngle).forEach(function(side){
+                        if (tracker[side]) {
+                            var dir2 = sideToAngle[side];
+                            sprite.h = sprite.h.add(
+                                adjStr.mul( Math.sin(dir + dir2) )
+                            );
+                            sprite.v = sprite.v.sub(
+                                adjStr.mul( Math.cos(dir + dir2) )
+                            );
+                        }
+                    });
+                };
+                retval.destroy = mk.destroy.bind(mk);
+                return retval;
+            }
+      , speedLimited:
+            function(limit) {
                 return function() {
+                    // FIXME: there's some logic overlap with friction
+                    // behavior.
+                    var h = this.h.as( U.pixel.per.second );
+                    var v = this.v.as( U.pixel.per.second );
+                    var spd = U.pixels( Math.sqrt(h*h + v*v) ).per.second;
+
+                    if (spd.as( U.pixel.per.second ) > limit.as( U.pixel.per.second )) {
+                        var dir = Math.atan2(h, v);
+                        this.h = limit.mul( Math.sin(dir) );
+                        this.v = limit.mul( Math.cos(dir) );
+                    }
                 };
             }
     };

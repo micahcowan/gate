@@ -6,6 +6,20 @@ var MajicUnits = (function() {
     _U.prototype = UnitsTopProto;
     var U = new _U;
 
+    var muError = function(msg) {
+        if (window.Error) {
+            var err = new Error(msg);
+            if (err.stack) {
+                msg += "\n" + err.stack;
+            }
+            else {
+                throw err;
+            }
+        }
+
+        throw msg;
+    };
+
     UnitsTopProto.now = function() {
         return U.milliseconds( (new Date).valueOf() );
     }
@@ -129,7 +143,7 @@ var MajicUnits = (function() {
                 if (result.extractable)
                     return result.valueOf();
                 else {
-                    throw "Can't extract as " + this._value + " " + div.typeTag() + "; value is in " + this.typeTag();
+                    muError("Can't extract as " + this._value + " " + div.typeTag() + "; value is in " + this.typeTag());
                 }
             }
       , valueOf:
@@ -138,7 +152,7 @@ var MajicUnits = (function() {
                     return this._value;
                 }
                 else {
-                    throw "Can't produce a value: value is in " + this.typeTag();
+                    muError("Can't produce a value: value is in " + this.typeTag());
                 }
             }
       , toString:
@@ -226,7 +240,7 @@ var MajicUnits = (function() {
 
         // Register type
         if (label == 'unit' || unitTypes[label]) {
-            throw "Unit type \"" + label + "\" already exists";
+            muError("Unit type \"" + label + "\" already exists");
         }
         unitTypes[label] = type;
 
