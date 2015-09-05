@@ -503,8 +503,11 @@ var MajicUnits = (function() {
         });
     };
 
+    // Now that the machinery's all in place, let's define our units of
+    // measure!
     var types = [
-        ['pixel', 'pixels', 'px']
+        ['metre', 'metres', 'm']
+      , ['pixel', 'pixels', 'px']
       , ['radian', 'radians', 'rad']
       , ['second', 'seconds', 's']
       , ['frame', 'frames', 'f']
@@ -513,7 +516,31 @@ var MajicUnits = (function() {
         U.addUnitType.apply(U, types[i]);
     }
 
-    U.addUnitType('millisecond', 'ms', U.seconds(0.001));
+    // Derivative types
+    types = [
+        ['millisecond', 'milliseconds', U.seconds(1 / 1000)]
+      , ['microsecond', 'microseconds', U.seconds(1 / 1000000)]
+      , ['nanosecond', 'nanoseconds', U.seconds(1 / 1000000000)]
+
+      , ['minute', 'minutes', U.seconds(60)]
+      , ['hour', 'hours', U.seconds(60 * 60)]
+      , ['day', 'days', U.seconds(24 * 60 * 60)]
+
+      , ['centimetre', 'centimetres', U.metres(0.01)]
+      , ['kilometre', 'kilometres', U.metres(1000)]
+      // Alternative, American spellings:
+      , ['meter', 'meters', U.metres(1)]
+      , ['centimeter', 'centimeters', U.metres(0.01)]
+      , ['kilometer', 'kilometers', U.metres(1000)]
+
+      , ['inch', 'inches', U.metres(0.0254)]
+      , ['foot', 'feet', U.metres(12 * 0.0254)]
+      , ['yard', 'yards', U.metres(36 * 0.0254)]
+      , ['mile', 'miles', U.metres(1609.344)]
+    ];
+    for (var i=0; i != types.length; ++i) {
+        U.addUnitType.apply(U, types[i]);
+    }
 
     return U;
 })();
