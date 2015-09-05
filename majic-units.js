@@ -510,7 +510,7 @@ var MajicUnits = (function() {
       , ['pixel', 'pixels', 'px']
       , ['radian', 'radians', 'rad']
       , ['second', 'seconds', 's']
-      , ['frame', 'frames', 'f']
+      , ['frame', 'frames', 'frm']
     ];
     for (var i=0; i != types.length; ++i) {
         U.addUnitType.apply(U, types[i]);
