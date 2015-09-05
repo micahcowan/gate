@@ -171,31 +171,9 @@ var MajicGame = (function() {
             // it out (probably mostly into MajicKeys?)
             function(keys, strength) {
                 var mk = new MajicKeys;
-                var tracker = {};
-                var mkhandler = function(tag) {
-                    return function(e) {
-                        tracker[tag] = true;
-                    };
-                };
-                ['clock', 'counter'].forEach(function(item){
-                    if (!(item in keys)) return;
-                    var k;
-                    if (keys[item] instanceof Array)
-                        k = keys[item];
-                    else
-                        k = [keys[item]];
-                    k.forEach(function(key) {
-                        mk.connect(key, mkhandler(item));
-                    });
-                });
+                mk.actions(keys);
                 var retval = function(delta) {
-                    // FIXME: instead of manually emptying, keep a
-                    // reference to something that contains tracker, and
-                    // then replace the inner ref with {}
-                    for (var key in tracker) {
-                        tracker[key] = false;
-                    }
-                    mk.pulse();
+                    var tracker = mk.pulse();
                     if (tracker.clock)
                         this.rot = this.rot.add( strength.mul(delta) );
                     if (tracker.counter)
@@ -207,35 +185,16 @@ var MajicGame = (function() {
       , thrustKeys:
             function(keys, strength) {
                 var mk = new MajicKeys;
-                var tracker = {};
+                mk.actions(keys);
                 var sideToAngle = {
                     forward:    0
                   , back:       Math.PI
                   , left:       Math.PI * 3/2
                   , right:      Math.PI / 2
                 };
-                var mkhandler = function(tag) {
-                    return function(e) {
-                        tracker[tag] = true;
-                    };
-                };
-                Object.keys(sideToAngle).forEach(function(side){
-                    if (!(side in keys)) return;
-                    var k;
-                    if (keys[side] instanceof Array)
-                        k = keys[side];
-                    else
-                        k = [keys[side]];
-                    k.forEach(function(key) {
-                        mk.connect(key, mkhandler(side));
-                    });
-                });
                 var retval = function(delta) {
                     var sprite = this;
-                    for (var key in tracker) {
-                        tracker[key] = false;
-                    }
-                    mk.pulse();
+                    var tracker = mk.pulse();
                     var dir = this.rot.as( U.radian );
                     var adjStr = strength.mul( delta );
                     Object.keys(sideToAngle).forEach(function(side){

@@ -24,6 +24,23 @@ var MajicKeys = function() {
         }
     };
 
+    // utility function used by .actions() method just below.
+    var mkhandler = function(action) {
+        return function(e) {
+            MK.actionTracker[action] = true;
+        };
+    };
+    MK.actions = function(actions) {
+        Object.keys(actions).forEach(function(action) {
+            var k = actions[action];
+            if (!(k instanceof Array))
+                k = [k];
+            k.forEach(function(a) {
+                MK.connect(a, mkhandler(action));
+            });
+        });
+    };
+
     MK.onDown = function() {
         var alen = arguments.length;
         if (alen % 2 == 1) { --alen; }
@@ -110,12 +127,14 @@ var MajicKeys = function() {
     };
 
     MK.pulse = function(e) {
+        MK.actionTracker = {};
         for (var key in MK.keys) {
             var conn = MK.connections[key];
             if (conn !== undefined && conn !== null) {
                 conn(e);
             }
         }
+        return MK.actionTracker;
     };
 
     window.addEventListener('keydown', MK.handleKeyDown);
