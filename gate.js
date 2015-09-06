@@ -4,7 +4,7 @@ window.addEventListener('load', function() {
     var GA = (window.GateArena = window.GateArena || {});
 
     var G = GA.game = new MajicGame(document.getElementById('game'));
-    var Sp = GA.sprites;
+    var Sp = GA.setupSprites();
 
     G.resetSprites(
         Sp.background

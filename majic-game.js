@@ -228,6 +228,35 @@ var MajicGame = (function() {
                     }
                 };
             }
+      , bouncingBounds:
+            function(width, height) {
+                return function(delta) {
+                    var x = this.x.as( U.pixel );
+                    var y = this.y.as( U.pixel );
+                    var w = width.as( U.pixel );
+                    var h = height.as( U.pixel );
+                    if (x < 0) {
+                        this.x = this.x.mul(-1);
+                        this.h = this.h.mul(-1);
+                    }
+                    else if (x > w) {
+                        this.x = this.x.sub( U.pixels( 2 * (x-w) ) );
+                        this.h = this.h.mul(-1);
+                    }
+
+                    if (y < 0) {
+                        this.y = this.y.mul(-1);
+                        this.v = this.v.mul(-1);
+                    }
+                    else if (y > h) {
+                        this.y = this.y.sub( U.pixels( 2 * (y-h) ) );
+                        this.v = this.v.mul(-1);
+                    }
+
+                    this.x.relax();
+                    this.y.relax();
+                }
+            }
     };
 
     return MajicGame;

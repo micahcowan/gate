@@ -2,10 +2,15 @@
 
 (function() {
     var GA = (window.GateArena = window.GateArena || {});
+    var sprites = GA.sprites = {};
+    // Delaying sprites setup allows us to refer to game properties
+    // (like game height/weight) after the MajicGame object is
+    // instantiated.
+    GA.setupSprites = function() {
+
     var G = MajicGame;
     var U = MajicUnits;
     var B = MajicGame.behavior;
-    var sprites = GA.sprites = {};
 
     sprites.background = new GA.Background();
 
@@ -32,35 +37,12 @@
                 )
           , B.friction(  U.pixels( 2 * 50 ).per.second.per.second  )
           , B.speedLimited( U.pixels( 240 ).per.second )
-          , // Bounds. FIXME: this should be a collision relationship
-            function(delta) {
-                var x = this.x.as( U.pixel );
-                var y = this.y.as( U.pixel );
-                var w = GA.game.width.as( U.pixel );
-                var h = GA.game.height.as( U.pixel );
-                if (x < 0) {
-                    this.x = this.x.mul(-1);
-                    this.h = this.h.mul(-1);
-                }
-                else if (x > w) {
-                    this.x = this.x.sub( U.pixels( 2 * (x-w) ) );
-                    this.h = this.h.mul(-1);
-                }
-
-                if (y < 0) {
-                    this.y = this.y.mul(-1);
-                    this.v = this.v.mul(-1);
-                }
-                else if (y > h) {
-                    this.y = this.y.sub( U.pixels( 2 * (y-h) ) );
-                    this.v = this.v.mul(-1);
-                }
-
-                this.x.relax();
-                this.y.relax();
-            }
+          , B.bouncingBounds( GA.game.width, GA.game.height )
             ]
 
       , draw: GA.art.drawPlayer
     });
+
+    return GA.sprites;
+    }; // end setupSprites()
 })();
