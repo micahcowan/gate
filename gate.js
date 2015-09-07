@@ -52,6 +52,16 @@ window.addEventListener('load', function() {
              }
     );
 
+    createjs.Sound.registerSound("shot.ogg", 'shot');
+    createjs.Sound.registerSound("clink.ogg", 'bounce');
+    createjs.Sound.registerSound("gate.ogg", 'gate');
+    createjs.Sound.registerSound("knock.ogg", 'knock');
+    createjs.Sound.registerSound("slurp.ogg", 'slurp');
+    createjs.Sound.registerSound("spawn.ogg", 'spawn');
+    createjs.Sound.registerSound("open.ogg", 'open');
+    createjs.Sound.registerSound("kill.ogg", 'kill');
+    createjs.Sound.registerSound("unh.ogg", 'unh');
+
     G.addEventListener('click', newGame);
 
     G.start();

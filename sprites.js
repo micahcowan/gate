@@ -33,11 +33,15 @@
                   , left:    'q'
                   , right:   'e'
                 }
-              , U.pixels( 6 * 50 ).per.second.per.second
+              , U.pixels( 300 ).per.second.per.second
                 )
-          , B.friction(  U.pixels( 2 * 50 ).per.second.per.second  )
+          , B.friction(  U.pixels( 100 ).per.second.per.second  )
           , B.speedLimited( U.pixels( 240 ).per.second )
-          , B.bouncingBounds( GA.game.width, GA.game.height )
+          , B.bouncingBounds(
+                  GA.game.width, GA.game.height,
+                  // Play "clink" when we bounce off a wall
+                  function(){ createjs.Sound.play('bounce') }
+            )
             ]
 
       , draw: GA.art.drawPlayer
