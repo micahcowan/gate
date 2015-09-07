@@ -185,10 +185,10 @@ var MajicUnits = (function() {
       //
       , add:
             function(uval) {
-                // FIXME: If we're going to use this, we need tags to be
-                // much more predictable, and guarantee unique nicks.
-                if (uval.typeTag() != this.typeTag())
-                    uval.as( this ); // Expected to raise an exception.
+                if (uval.typeTag() != this.typeTag()) {
+                    muError("Can't add operand " + uval.toString()
+                            + " to base " + this.toString())
+                }
                 return new UnitValue(this._value + uval._value, this._numUnits, this._denomUnits);
             }
       //// sub method ////
@@ -198,10 +198,10 @@ var MajicUnits = (function() {
       //
       , sub:
             function(uval) {
-                // FIXME: If we're going to use this, we need tags to be
-                // much more predictable, and guarantee unique nicks.
-                if (uval.typeTag() != this.typeTag())
-                    uval.as( this ); // Expected to raise an exception.
+                if (uval.typeTag() != this.typeTag()) {
+                    muError("Can't sub operand " + uval.toString()
+                            + " from base " + this.toString())
+                }
                 return new UnitValue(this._value - uval._value, this._numUnits, this._denomUnits);
             }
       //// set method ////
@@ -269,6 +269,11 @@ var MajicUnits = (function() {
       //
       , as:
             function(div) {
+                if (div instanceof Function) {
+                    // Probably wrote U.pixels instead of U.pixel.
+                    // Accommodate.
+                    div = div(1);
+                }
                 var result = this.div( div );
                 if (result.extractable)
                     return result.valueOf();

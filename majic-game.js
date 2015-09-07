@@ -90,7 +90,7 @@ var MajicGame = (function() {
             window.setTimeout(this.tick.bind(this), msecsPerFrame);
         }
 
-        this.targetFrameRate = U.frames( 50 ).per.second.relax();
+        this.targetFrameRate = U.frames( 50 ).per.second.relax()
         this.maxSkippedFrames = U.frames( 2.5 );
         this.paused = false;
         this.timeElapsed = U.seconds(0);
@@ -115,8 +115,8 @@ var MajicGame = (function() {
                 });
             }
       // Initial defaults:
-      , x: U.pixels( 0 ).relax()
-      , y: U.pixels( 0 ).relax()
+      , x: U.pixels( 0 )
+      , y: U.pixels( 0 )
       , h: U.pixels( 0 ).per.second
       , v: U.pixels( 0 ).per.second
       , rot: U.radians( 0 )
@@ -124,16 +124,21 @@ var MajicGame = (function() {
 
     MajicGame.spritePrototype = new MajicGame.Sprite;
 
-    MajicGame.makeSpriteClass = function(data, initfn) {
+    MajicGame.makeSpriteClass = function(data, proto) {
         var newClass = function(ctorData) {
             this.mergeData(data);
             if (ctorData)
                 this.mergeData(ctorData);
-            if (initfn) {
-                initfn.apply(this, arguments);
+            if (this.initSprite) {
+                this.initSprite.apply(this, arguments);
             }
         };
-        newClass.prototype = MajicGame.spritePrototype;
+        if (proto) {
+            proto.prototype = MajicGame.spritePrototype;
+            newClass.prototype = new proto;
+        }
+        else
+            newClass.prototype = MajicGame.spritePrototype;
         return newClass;
     };
 
@@ -143,8 +148,8 @@ var MajicGame = (function() {
                 var h, v;
                 h = this.h.mul(delta) || U.pixels( 0 );
                 v = this.v.mul(delta) || U.pixels( 0 );
-                this.x = this.x.add( h ).relax();
-                this.y = this.y.add( v ).relax();
+                this.x = this.x.add( h );
+                this.y = this.y.add( v );
             }
       , friction:
             function(value) {
@@ -258,11 +263,8 @@ var MajicGame = (function() {
                         bounced = true;
                     }
 
-                    if (bounced) {
-                        this.x.relax();
-                        this.y.relax();
+                    if (bounced && cb)
                         cb.call(this);
-                    }
                 }
             }
     };

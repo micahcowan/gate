@@ -49,8 +49,8 @@
         var G = GA.game;
         var msg = this.text;
         var size = this.size || 20;
-        var x = this.x;
-        var y = this.y;
+        var x = this.x.as( U.pixel );
+        var y = this.y.as( U.pixel );
         s.font = size + 'px Arial Black, Helvetica, sans-serif';
         s.lineWidth = 5;
         s.lineJoin = 'round';
@@ -76,6 +76,9 @@
         }
         */
 
+        if (!p.bullet.isAtRest)
+            p.bullet.draw(s);
+
         s.beginPath();
         var x0 = 0;
         var y0 = - r * 4/3;
@@ -84,7 +87,7 @@
         var x2 = + r * Math.sin(4/3 * Math.PI);
         var y2 = - r * Math.cos(4/3 * Math.PI);
         s.save();
-        s.translate(p.x, p.y);
+        s.translate(p.x.as( U.pixel ), p.y.as( U.pixel ));
         s.rotate(p.rot.as( U.radian ));
         s.moveTo(x0, y0);
         s.bezierCurveTo(x0, y0, x1, y1-r*3/4, x1, y1+r/3);
@@ -103,7 +106,7 @@
             s.fill();
             s.restore();
         }
-        else if (true || !GG.state.shot.fired) {
+        else if (p.bullet.isAtRest) {
             s.save();
             GA.art.shadow();
             s.fill();
@@ -115,5 +118,41 @@
             s.stroke();
         }
         s.restore();
+    };
+
+    GA.art.drawBullet = function(scr) {
+        if (this.isAtRest) return;
+
+        var timeSinceFire = GA.game.timeElapsed.sub( this.firedTime );
+        var r = this.firedRadius; // default bullet radius.
+        var maxR = this.recallRadius; // max bullet radius.
+
+        if (timeSinceFire.sub( this.firingTime ).as( U.milliseconds ) < 0) {
+            // slide is percentage-complete of transition between min
+            // and max radius (at firing, or at recall)
+            var slide = timeSinceFire.div( this.firingTime ).valueOf();
+            if (this.isFired) {
+                slide = 1.0 - slide;
+            }
+
+            r = r.add( maxR.sub( r ).mul( slide ) );
+        }
+        else if (!this.isFired) {
+            r = maxR;
+        }
+
+        scr.beginPath();
+        scr.fillStyle = this.color;
+        scr.arc(
+            this.x.as( U.pixel )
+          , this.y.as( U.pixel )
+          , r.as( U.pixel )
+
+          , 0, 2 * Math.PI // IOW, draw a full-circle arc
+        );
+        scr.save();
+        GA.art.shadow();
+        scr.fill();
+        scr.restore();
     };
 })();

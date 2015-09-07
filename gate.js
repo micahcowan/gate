@@ -4,6 +4,9 @@ window.addEventListener('load', function() {
     var GA = (window.GateArena = window.GateArena || {});
 
     var G = GA.game = new MajicGame(document.getElementById('game'));
+    GA.soundPlayer = function(name) {
+        return createjs.Sound.play.bind(createjs.Sound, name);
+    };
     var Sp = GA.setupSprites();
 
     G.resetSprites(
@@ -22,8 +25,8 @@ window.addEventListener('load', function() {
             Sp.background
           , S.gates
           , S.bullets
-          , S.player
           , S.enemies
+          , S.player
         );
     };
     GA.newGame = newGame;
