@@ -125,12 +125,14 @@ var MajicGame = (function() {
     MajicGame.spritePrototype = new MajicGame.Sprite;
 
     MajicGame.makeSpriteClass = function(data, proto) {
-        var newClass = function(ctorData) {
+        var newClass = function() {
             this.mergeData(data);
-            if (ctorData)
-                this.mergeData(ctorData);
             if (this.initSprite) {
                 this.initSprite.apply(this, arguments);
+            }
+            else if (arguments.length > 0) {
+                // Default initialization is to merge data from first arg.
+                this.mergeData(arguments[0]);
             }
         };
         if (proto) {

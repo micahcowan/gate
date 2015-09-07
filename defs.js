@@ -129,8 +129,7 @@
             var behavior = function(delta) {
                 if (!owner) {
                     owner = this;
-                    bullet = owner.bullet = new GA.sprites.Bullet(data);
-                    bullet.owner = owner;
+                    bullet = owner.bullet = new GA.sprites.Bullet(owner, data);
                 }
 
                 if (triggered) {

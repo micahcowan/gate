@@ -67,6 +67,10 @@
           , GA.behavior.bulletBoundsRecall( GA.game.width, GA.game.height )
           , GA.behavior.bulletRecallBehavior
         ]
+      , initSprite: function(owner, data) {
+            this.owner = owner;
+            this.mergeData( data );
+        }
     }, GA.bulletProtoClass // prototype to provide .fire() and other methods.
     );
 
