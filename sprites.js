@@ -65,7 +65,9 @@
       , behavior: [
             GA.behavior.bulletFiredBehavior
           , GA.behavior.bulletBoundsRecall( GA.game.width, GA.game.height )
-          , GA.behavior.bulletRecallBehavior
+          , GA.behavior.bulletRecallBehavior({
+                onSlurp: GA.soundPlayer('slurp')
+            })
         ]
       , initSprite: function(owner, data) {
             this.owner = owner;

@@ -168,15 +168,32 @@
                 }
             };
         }
-      , bulletRecallBehavior: function(delta) {
-            if (!this.isReturning) return;
+      , bulletRecallBehavior: function(data) {
+            var onSlurp;
+            if (data && data.onSlurp)
+                onSlurp = data.onSlurp;
+            return function(delta) {
+                if (!this.isReturning) return;
 
-            var distx = this.owner.x.sub( this.x ).as( U.pixels );
-            var disty = this.owner.y.sub( this.y ).as( U.pixels );
-            var dir = Math.atan2(distx, disty);
-            var shift = this.speed.mul(delta);
-            this.x = this.x.add( shift.mul( Math.sin(dir) ) );
-            this.y = this.y.add( shift.mul( Math.cos(dir) ) );
+                var distx = this.owner.x.sub( this.x ).as( U.pixels );
+                var disty = this.owner.y.sub( this.y ).as( U.pixels );
+                if (Math.sqrt(distx * distx + disty * disty)
+                    < this.recallRadius.as( U.pixels )) {
+
+                    this.rest();
+                    if (onSlurp) {
+                        onSlurp.call(this);
+                    }
+                }
+                else {
+                    var dir = Math.atan2(distx, disty);
+                    var shift = this.speed.mul(delta);
+                    var dx = shift.mul( Math.sin(dir) );
+                    var dy = shift.mul( Math.cos(dir) );
+                    this.x = this.x.add( dx );
+                    this.y = this.y.add( dy );
+                }
+            }
         }
     };
 })();
