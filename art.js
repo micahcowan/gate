@@ -155,4 +155,45 @@
         scr.fill();
         scr.restore();
     };
+
+    GA.art.drawGate = function(scr) {
+        if (!this.open) return;
+
+        var x = this.x;
+        var y = this.y;
+
+        var w = this.size.as( U.pixels );
+        var x0 = x - w/2;
+        var y0 = y - w/2;
+        var r = 3;
+        var rSpeed = this.locked? 1000 : 500; //msecs
+        var r2 = w * 0.5;
+        var minStop = 0.5;
+        var maxStop = 1.0;
+
+        var slide = Math.abs(GA.game.timeElapsed.as( U.seconds ) % (rSpeed * 2) - rSpeed) / rSpeed;
+        var stop = minStop + (maxStop - minStop) * slide;
+
+        var grad = scr.createRadialGradient(
+            x,
+            y,
+            r,
+            x,
+            y,
+            r2);
+
+        var color1 = 'rgb(128,226,240)';
+        var color2 = 'rgba(128,226,240,0)'
+        if (this.locked) {
+            color1 = 'rgb(0,220,180)';
+            color2 = 'rgba(0,220,180,0)'
+        }
+        grad.addColorStop(0, color1);
+        grad.addColorStop(stop, color2);
+        //grad.addColorStop(1, 'red');
+
+        scr.fillStyle = grad;
+        //scr.fillStyle = 'red';
+        scr.fillRect(x0, y0, w, w);
+    };
 })();

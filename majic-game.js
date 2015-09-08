@@ -71,24 +71,39 @@ var MajicGame = (function() {
                 this.now = now;
                 this.timeElapsed = this.timeElapsed.add(delta);
 
-                // Behave things
-                this._things.forEach(function(thing) {
-                    if (!thing.behavior) return;
-                    thing.behavior.forEach(function(b) {
-                        b.call(thing, delta.mul(1));
-                    });
-                });
+                this.behaveAll(delta, this._things);
             }
 
             // Draw things
-            var screen = this.screen;
-            this._things.forEach(function(thing) {
-                if (thing.draw) thing.draw(screen)
-            });
+            this.drawAll(this._things)
 
             var msecsPerFrame = this.targetFrameRate.inverse.as( U.millisecond.per.frame );
             window.setTimeout(this.tick.bind(this), msecsPerFrame);
-        }
+        };
+        this.drawAll = function(list) {
+            var screen = this.screen;
+            var game = this;
+            list.forEach(function(thing) {
+                if (thing.draw) thing.draw(screen)
+                else if (thing instanceof Array) {
+                    game.drawAll(thing);
+                }
+            });
+        };
+        this.behaveAll = function(delta, list) {
+            var game = this;
+            list.forEach(function(thing) {
+                if (!thing.behavior) return;
+                thing.behavior.forEach(function(b) {
+                    if (b instanceof Array)
+                        b.forEach(function(bb) {
+                            game.behaveAll(delta, bb);
+                        });
+                    else
+                        b.call(thing, delta.mul(1));
+                });
+            });
+        };
 
         this.targetFrameRate = U.frames( 50 ).per.second.relax()
         this.maxSkippedFrames = U.frames( 2.5 );

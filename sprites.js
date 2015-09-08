@@ -76,6 +76,12 @@
     }, GA.bulletProtoClass // prototype to provide .fire() and other methods.
     );
 
+    sprites.Gate = MajicGame.makeSpriteClass({
+        size: U.pixels( 64 )
+      , draw: GA.art.drawGate
+      , open: true // XXX
+    });
+
     return sprites;
     }; // end setupSprites()
 })();
