@@ -58,19 +58,23 @@ var MajicGame = (function() {
                 }
             });
         };
-        this.behaveAll = function(delta, list) {
+
+        var processBehavior = function(thing, delta, b) {
+            if (b instanceof Array)
+                b.forEach(processBehavior.bind(undefined, thing, delta));
+            else
+                b.call(thing, delta.mul(1));
+        };
+        this.behaveAll = function(delta, behavable) {
             var game = this;
-            list.forEach(function(thing) {
-                if (!thing.behavior) return;
-                thing.behavior.forEach(function(b) {
-                    if (b instanceof Array)
-                        b.forEach(function(bb) {
-                            game.behaveAll(delta, bb);
-                        });
-                    else
-                        b.call(thing, delta.mul(1));
+
+            if (behavable.behavior) // An array may also have a behavior
+                processBehavior(behavable, delta, behavable.behavior);
+            if (behavable instanceof Array) {
+                behavable.forEach(function (item) {
+                    game.behaveAll(delta, item);
                 });
-            });
+            }
         };
 
         this.targetFrameRate = U.frames( 50 ).per.second.relax()
@@ -266,35 +270,37 @@ var MajicGame = (function() {
                 };
             }
       , bouncingBounds:
-            function(width, height, cb) {
+            function(left, top, width, height, cb) {
                 return function(delta) {
                     var bouncing = false;
                     var x = this.x.as( U.pixel );
                     var y = this.y.as( U.pixel );
-                    var w = width.as( U.pixel );
-                    var h = height.as( U.pixel );
+                    var l = left.as( U.pixel );
+                    var t = top.as( U.pixel );
+                    var r = left.add( width ).as( U.pixel );
+                    var b = top.add( height ).as( U.pixel );
                     var newX = this.x;
                     var newY = this.y;
                     var newH = this.h;
                     var newV = this.v;
-                    if (x < 0) {
-                        newX = this.x.mul(-1);
+                    if (x < l) {
+                        newX = this.x.sub( U.pixels( 2 * (x-l) ) );
                         newH = this.h.mul(-1);
                         bouncing = true;
                     }
-                    else if (x > w) {
-                        newX = this.x.sub( U.pixels( 2 * (x-w) ) );
+                    else if (x > r) {
+                        newX = this.x.sub( U.pixels( 2 * (x-r) ) );
                         newH = this.h.mul(-1);
                         bouncing = true;
                     }
 
-                    if (y < 0) {
-                        newY = this.y.mul(-1);
+                    if (y < t) {
+                        newY = this.y.sub( U.pixels( 2 * (y-t) ) );
                         newV = this.v.mul(-1);
                         bouncing = true;
                     }
-                    else if (y > h) {
-                        newY = this.y.sub( U.pixels( 2 * (y-h) ) );
+                    else if (y > b) {
+                        newY = this.y.sub( U.pixels( 2 * (y-b) ) );
                         newV = this.v.mul(-1);
                         bouncing = true;
                     }
@@ -308,7 +314,7 @@ var MajicGame = (function() {
                         if (!cb) {
                             cb = [];
                         }
-                        else if (!cb instanceof Array)
+                        else if (!(cb instanceof Array))
                             cb = [cb];
 
                         for (var i=0; i < cb.length; ++i) {
@@ -325,6 +331,15 @@ var MajicGame = (function() {
                         this.v = newV;
                     }
                 }
+            }
+      , boundedLanceWandering:
+            function( l, t, w, h ) {
+                var behavior = function(delta) {
+                    // XXX for now, just coast
+                    this.x = this.x.add( this.h.mul( delta ) );
+                    this.y = this.y.add( this.v.mul( delta ) );
+                };
+                return behavior;
             }
     };
 

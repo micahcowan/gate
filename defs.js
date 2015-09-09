@@ -300,7 +300,7 @@
                     // further callbacks.
                     var onb = this.onBounce;
                     if (!onb) return;
-                    else if (!onb instanceof Array)
+                    else if (!(onb instanceof Array))
                         onb = [onb];
 
                     for (var i=0; i < onb.length; ++i) {

@@ -15,6 +15,8 @@
 
     sprites.background = new GA.Background();
 
+    var DEFAULT_BULLET_SPEED = U.pixels( 300 ).per.second;
+
     sprites.Player = G.makeSpriteClass({
         size: U.pixels( 12 )
       , hitPoints: 3
@@ -40,7 +42,7 @@
           , GABh.playerBullet({
                 trigger:        'Space'
 
-              , speed:          U.pixels( 300 ).per.second
+              , speed:          DEFAULT_BULLET_SPEED
               , color:          'red'
               , onBounce:       [
                     GA.maybeLockGate
@@ -50,15 +52,35 @@
           , Bh.friction(  U.pixels( 100 ).per.second.per.second  )
           , Bh.speedLimited( U.pixels( 240 ).per.second )
           , Bh.bouncingBounds(
+                  U.pixels( 0 ), U.pixels( 0 ),
                   GA.game.width, GA.game.height,
                   // Play "clink" when we bounce off a wall
-                  [
-                      GA.maybeTeleportGate
-                  ]
+                  GA.maybeTeleportGate
             )
         ]
 
       , draw: GA.art.drawPlayer
+    });
+
+    sprites.BasicBaddy = MajicGame.makeSpriteClass({
+        size: 32
+      , speed: U.pixels( 70 ).per.second
+
+      , minWaitChDir: U.seconds( 3 )
+      , maxWaitChDir: U.seconds( 5 )
+
+      , minWaitShot:  U.seconds( 1 )
+      , maxWaitShot:  U.seconds( 6 )
+
+      , maxRotate: U.radians( Math.PI * 3/5 ).per.second
+      , lanceSize: U.pixels( 60 )
+
+      , behavior: [
+            Bh.boundedLanceWandering(
+                0, 0,
+                GA.game.width, GA.game.height
+            )
+        ]
     });
 
     sprites.Bullet = MajicGame.makeSpriteClass({
