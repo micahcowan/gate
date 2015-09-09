@@ -15,39 +15,7 @@ var MajicGame = (function() {
         };
 
     };
-    MajicGame.prototype = new (function () {
-        // FIXME: Event handling stuff should go in an ancestor class.
-        this.addEventListener = function(eTag, handler) {
-            var e = this._events = (this._events || {});
-            if (e[eTag] === undefined) {
-                e[eTag] = [];
-                // XXX: Since we never remove these event listeners, we
-                // can't ever be garbage collected.
-                window.addEventListener(eTag, this.eventHandler.bind(this, eTag));
-            }
-            var f = e[eTag];
-            f.push(handler);
-        };
-        this.removeEventListener = function(eTag, handler) {
-            var e = this._events;
-            var f = e[eTag];
-            if (f !== undefined) {
-                for (var i=0; i != f.length; ++i) {
-                    var g = f[i];
-                    if (g === handler) {
-                        f.splice(i, 1);
-                        return;
-                    }
-                }
-            }
-        };
-        this.eventHandler = function(tag, ev) {
-            var e = this._events;
-            var f = e[tag];
-            if (f !== undefined) {
-                f.forEach(function(iter) {iter(ev);});
-            }
-        };
+    var MajicGamePrototype = function () {
         this.resetSprites = function() {
             this._things = [];
             this._things.push.apply(this._things, arguments);
@@ -109,33 +77,80 @@ var MajicGame = (function() {
         this.maxSkippedFrames = U.frames( 2.5 );
         this.paused = false;
         this.timeElapsed = U.seconds(0);
-    })();
-
-    MajicGame.Sprite = function() {};
-    MajicGame.Sprite.prototype = {
-        mergeData:
-            function(data) {
-                if (!data) return;
-                for (var key in data) {
-                    this[key] = data[key];
+    };
+    var EventTarget = MajicGame.EventTarget = function() {
+        this.addEventListener = function(eTag, handler) {
+            var e = this._events = (this._events || {});
+            if (e[eTag] === undefined) {
+                e[eTag] = [];
+                // FIXME: Since we never remove these event listeners, we
+                // can't ever be garbage collected.
+                window.addEventListener(eTag, this.eventHandler.bind(this, eTag));
+            }
+            var f = e[eTag];
+            f.push(handler);
+        };
+        this.removeEventListener = function(eTag, handler) {
+            var e = this._events;
+            var f = e[eTag];
+            if (f !== undefined) {
+                for (var i=0; i != f.length; ++i) {
+                    var g = f[i];
+                    if (g === handler) {
+                        f.splice(i, 1);
+                        return;
+                    }
                 }
             }
-      , destroy:
-            function() {
-                var behavior = this.behavior
-                if (!behavior) return;
-                this.behavior = [];
-                behavior.forEach(function(item){
-                    if (item.destroy) item.destroy();
-                });
+        };
+        this.eventHandler = function(tag, ev) {
+            var e = this._events;
+            var f = e[tag];
+            if (f !== undefined) {
+                f.forEach(function(iter) {iter(ev);});
             }
-      // Initial defaults:
-      , x: U.pixels( 0 )
-      , y: U.pixels( 0 )
-      , h: U.pixels( 0 ).per.second
-      , v: U.pixels( 0 ).per.second
-      , rot: U.radians( 0 )
+        };
+        this.dispatchEvent = function(ev) {
+            this.eventHandler(ev.type, ev);
+        };
     };
+    MajicGamePrototype.prototype = new EventTarget;
+    MajicGame.prototype = new MajicGamePrototype;
+
+    MajicGame.Event = function(type, data) {
+        this.type = type;
+        this.preventDefault = function(){};
+        if (!data) return;
+        for (var key in data) {
+            this[key] = data[key];
+        }
+    };
+
+    MajicGame.Sprite = function() {};
+    var SpritePrototype = function() {
+        this.mergeData = function(data) {
+            if (!data) return;
+            for (var key in data) {
+                this[key] = data[key];
+            }
+        };
+        this.destroy = function() {
+            var behavior = this.behavior
+            if (!behavior) return;
+            this.behavior = [];
+            behavior.forEach(function(item){
+                if (item.destroy) item.destroy();
+            });
+        };
+        // Initial defaults:
+        this.x = U.pixels( 0 );
+        this.y = U.pixels( 0 );
+        this.h = U.pixels( 0 ).per.second;
+        this.v = U.pixels( 0 ).per.second;
+        this.rot = U.radians( 0 );
+    };
+    SpritePrototype.prototype = new EventTarget;
+    MajicGame.Sprite.prototype = new SpritePrototype;
 
     MajicGame.spritePrototype = new MajicGame.Sprite;
 
