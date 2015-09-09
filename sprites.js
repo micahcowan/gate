@@ -54,7 +54,6 @@
                   // Play "clink" when we bounce off a wall
                   [
                       GA.maybeTeleportGate
-                    , GA.soundPlayer('bounce')
                   ]
             )
         ]

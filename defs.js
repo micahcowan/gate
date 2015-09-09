@@ -83,12 +83,17 @@
             }
         }
 
-        // XXX temporary opening toggle
+        // XXX open some gates opposing, some not
         var toggle = true;
         for (var i=0; i < NUM_WALLS; i++) {
             var wall = this[i];
             for (var j=0; j != wall.length; ++j) {
-                wall[j].open = (toggle = !toggle);
+                var open;
+                if (i % 3 == 0)
+                    open = (toggle = !toggle);
+                else
+                    open = true;
+                wall[j].open = open;
             }
         }
     };
@@ -227,6 +232,8 @@
                 return false;
             }
             createjs.Sound.play('open');
+        } else {
+            createjs.Sound.play('bounce')
         }
         return true;
     };
