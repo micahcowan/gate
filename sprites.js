@@ -81,6 +81,8 @@
                 GA.game.width, GA.game.height
             )
         ]
+
+      , draw: GA.art.drawBaddie
     });
 
     sprites.Bullet = MajicGame.makeSpriteClass({

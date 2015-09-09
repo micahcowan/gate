@@ -196,4 +196,69 @@
         //scr.fillStyle = 'red';
         scr.fillRect(x0, y0, w, w);
     };
+
+    GA.art.drawBaddie = function(scr) {
+        var scr = GG.screen;
+        var baddie = this;
+        var x = baddie.x.as( U.pixel );
+        var y = baddie.y.as( U.pixel );
+
+        var hW = baddie.width.as( U.pixel ) / 2; // half of width
+        var cRad = 8; // corners radii
+
+        var alpha = 0.45;
+        if (baddie.killedTime) {
+            var maxHW = 80;
+            var percent = (GG.state.gameTime - baddie.killedTime) /
+                                GA.BADDIE_DEATH_TIME;
+            var oldHW = hW;
+            hW = hW + (maxHW - hW) * percent;
+            cRad *= hW / oldHW;
+            alpha -= alpha * percent;
+        }
+        scr.fillStyle = 'rgba(0,0,128,' + alpha + ')';
+
+        scr.beginPath();
+        scr.moveTo(x-hW+cRad, y-hW);
+        scr.lineTo(x+hW-cRad, y-hW); // T
+        scr.arcTo(x+hW, y-hW, x+hW, y-hW+cRad, cRad); // TR
+        scr.lineTo(x+hW, y+hW-cRad); // R
+        scr.arcTo(x+hW, y+hW, x+hW-cRad, y+hW, cRad); // BR
+        scr.lineTo(x-hW+cRad, y+hW); // B
+        scr.arcTo(x-hW, y+hW, x-hW, y+hW-cRad, cRad); // BL
+        scr.lineTo(x-hW, y-hW+cRad); // L
+        scr.arcTo(x-hW, y-hW, x-hW+cRad, y-hW, cRad); // TL
+        scr.save();
+        if (!baddie.killedTime)
+            GA.art.shadow();
+        if (true || !baddie.shot.fired || baddie.killedTime)
+            scr.fill();
+        scr.restore();
+        if (!baddie.killedTime) {
+            scr.lineWidth = 2;
+            scr.strokeStyle = 'black';
+            scr.stroke();
+        }
+
+        if (!GA.debug || !baddie.dir || !baddie.desiredDir) return;
+        // lance line
+        var lance = baddie.lanceSize.as( U.pixel );
+        var dir = baddie.dir.as( U.radian );
+        scr.beginPath();
+        scr.moveTo(x, y);
+        scr.lineTo(x + lance * Math.sin(dir), y + lance * Math.cos(dir));
+        scr.lineWidth = 1;
+        scr.strokeStyle = 'black';
+        scr.stroke();
+
+        // Arc to desiredDir
+        scr.beginPath();
+        var desiredDir = baddie.desiredDir;
+        var adj = Math.PI / 2;
+        var diff = GA.diffRadians(desiredDir, dir)
+        scr.arc(x, y, 40, -dir + adj, -desiredDir + adj, diff > 0);
+        scr.lineWidth = 2;
+        scr.strokeStyle = 'magenta';
+        scr.stroke();
+    };
 })();
