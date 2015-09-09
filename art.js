@@ -159,8 +159,8 @@
     GA.art.drawGate = function(scr) {
         if (!this.open) return;
 
-        var x = this.x;
-        var y = this.y;
+        var x = this.x.as( U.pixel );
+        var y = this.y.as( U.pixel );
 
         var w = this.size.as( U.pixels );
         var x0 = x - w/2;

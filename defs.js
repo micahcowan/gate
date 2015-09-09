@@ -63,12 +63,48 @@
         for (var i=0; i != NUM_WALLS; ++i) {
             var list = [];
             for (var j=0; j != 3; ++j) {
+                // We push one x and two ys, or one y and two xs.
+                // Whichever one there's one of, that's a fixed axis.
+                // The other represents a range between the two values,
+                // and gates will be interspersed evenly across it.
                 list.push( rect[(i+j) % 4] );
             }
             this.push( new GA.GateWall(list) );
         }
+
+        // Set up opposing-gate info. The first and last wall oppose,
+        // and the two in the middle.
+        for (var i=0; i < NUM_WALLS; i+=2) {
+            var wall = this[(i+1) % NUM_WALLS];
+            var oppose = this[(i+2) % NUM_WALLS];
+            for (var j=0; j != wall.length; ++j) {
+                wall[j].opposingGate = oppose[j];
+                oppose[j].opposingGate = wall[j];
+            }
+        }
+
+        // XXX temporary opening toggle
+        var toggle = true;
+        for (var i=0; i < NUM_WALLS; i++) {
+            var wall = this[i];
+            for (var j=0; j != wall.length; ++j) {
+                wall[j].open = (toggle = !toggle);
+            }
+        }
     };
-    GA.GateGroup.prototype = [];
+    GA.GateGroupProtoClass = function() {
+        this.getCollidingGate = function(obj) {
+            var gate;
+            // for each wall:
+            for (var i=0; !gate && i != this.length; ++i) {
+                gate = this[i].getCollidingGate(obj);
+                if (gate) return gate;
+            }
+            return;
+        };
+    };
+    GA.GateGroupProtoClass.prototype = [];
+    GA.GateGroup.prototype = new GA.GateGroupProtoClass;
 
     GA.GateWall = function(args) {
         var GATES_PER_WALL = 3;
@@ -86,19 +122,46 @@
         var spaceBetween = info[range][1] / (GATES_PER_WALL + 1);
         for (var gnum = 0; gnum != GATES_PER_WALL; ++gnum) {
             var gateInfo = {};
-            gateInfo[fixed] = info[fixed][0];
-            gateInfo[range] = info[range][0] + (spaceBetween * (gnum + 1));
+            gateInfo[fixed] = U.pixels( info[fixed][0] );
+            gateInfo[range] = U.pixels( info[range][0] + (spaceBetween * (gnum + 1)) );
             gate.push( new GA.sprites.Gate( gateInfo ) );
         }
     };
-    GA.GateWall.prototype = [];
+    GA.GateWallProtoClass = function() {
+        this.getCollidingGate = function(obj) {
+            // for each gate
+            for (var i=0; i != this.length; ++i) {
+                var gate = this[i];
+                if (gate.collidesWith(obj))
+                    return gate;
+            }
+            return;
+        };
+    };
+    GA.GateWallProtoClass.prototype = [];
+    GA.GateWall.prototype = new GA.GateWallProtoClass;
+
+    GA.GateProtoClass = function() {
+        this.collidesWith = function(obj) {
+            var range = this.size.as( U.pixel ) / 2;
+            var x = this.x.as( U.pixel );
+            var y = this.y.as( U.pixel );
+            var ox = obj.x.as( U.pixel );
+            var oy = obj.y.as( U.pixel );
+            return (Math.abs( ox - x ) < range
+                    && Math.abs( oy - y ) < range);
+        };
+        this.lock = function() {
+            this.locked = true;
+        }
+    };
 
     GA.Background = function() {
         this.draw = GA.art.drawBackground;
     };
     GA.Background.prototype = spritePrototype;
 
-    GA.bulletProtoClass = function() {
+    GA.BulletProtoClass = function() {
         // bullet states (not exposed, except via property accessors)
         var AT_REST = 0;   // held by owner, not doing anything
         var FIRED   = 1;   // en route from owner
@@ -139,6 +202,33 @@
         this.rest = function() {
             this.state = AT_REST;
         };
+    };
+
+    //// Callback functions
+    GA.maybeLockGate = function() {
+        var gate = GA.state.gates.getCollidingGate(this);
+        if (gate && gate.open) {
+            gate.lock();
+            createjs.Sound.play('open');
+            return false; // Cancel sound playing
+        }
+        return true;
+    };
+    GA.maybeTeleportGate = function() {
+        var gate = GA.state.gates.getCollidingGate(this);
+        if (gate && gate.open) {
+            gate.lock();
+            var opposing = gate.opposingGate;
+            if (opposing.open) {
+                opposing.lock();
+                createjs.Sound.play('gate');
+                this.x = opposing.x.mul(1);
+                this.y = opposing.y.mul(1);
+                return false;
+            }
+            createjs.Sound.play('open');
+        }
+        return true;
     };
 
     //// Behaviors: GateArena custom sprite behaviors
@@ -194,9 +284,22 @@
                 if (x < 0 || x > width.as( U.pixels )
                     || y < 0 || y > height.as( U.pixels )) {
 
+                    // Unlike MajicGame's bouncingBounds behavior,
+                    // bulletBoundsRecall always recalls if it strikes the
+                    // walls.
                     this.recall();
-                    if (this.onBounce)
-                        this.onBounce.call(this);
+
+                    // ...but returning false from a callback still cancels
+                    // further callbacks.
+                    var onb = this.onBounce;
+                    if (!onb) return;
+                    else if (!onb instanceof Array)
+                        onb = [onb];
+
+                    for (var i=0; i < onb.length; ++i) {
+                        if (!onb[i].call(this))
+                            break;
+                    }
                 }
             };
         }

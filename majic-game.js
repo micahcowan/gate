@@ -268,35 +268,62 @@ var MajicGame = (function() {
       , bouncingBounds:
             function(width, height, cb) {
                 return function(delta) {
-                    var bounced = false;
+                    var bouncing = false;
                     var x = this.x.as( U.pixel );
                     var y = this.y.as( U.pixel );
                     var w = width.as( U.pixel );
                     var h = height.as( U.pixel );
+                    var newX = this.x;
+                    var newY = this.y;
+                    var newH = this.h;
+                    var newV = this.v;
                     if (x < 0) {
-                        this.x = this.x.mul(-1);
-                        this.h = this.h.mul(-1);
-                        bounced = true;
+                        newX = this.x.mul(-1);
+                        newH = this.h.mul(-1);
+                        bouncing = true;
                     }
                     else if (x > w) {
-                        this.x = this.x.sub( U.pixels( 2 * (x-w) ) );
-                        this.h = this.h.mul(-1);
-                        bounced = true;
+                        newX = this.x.sub( U.pixels( 2 * (x-w) ) );
+                        newH = this.h.mul(-1);
+                        bouncing = true;
                     }
 
                     if (y < 0) {
-                        this.y = this.y.mul(-1);
-                        this.v = this.v.mul(-1);
-                        bounced = true;
+                        newY = this.y.mul(-1);
+                        newV = this.v.mul(-1);
+                        bouncing = true;
                     }
                     else if (y > h) {
-                        this.y = this.y.sub( U.pixels( 2 * (y-h) ) );
-                        this.v = this.v.mul(-1);
-                        bounced = true;
+                        newY = this.y.sub( U.pixels( 2 * (y-h) ) );
+                        newV = this.v.mul(-1);
+                        bouncing = true;
                     }
 
-                    if (bounced && cb)
-                        cb.call(this);
+                    // We're going to bounce. Use callbacks.
+                    // They have an opportunity to halt further
+                    // callbacking, and cancel the bounce, if they
+                    // return === false.
+                    var doDefault = true;
+                    if (bouncing) {
+                        if (!cb) {
+                            cb = [];
+                        }
+                        else if (!cb instanceof Array)
+                            cb = [cb];
+
+                        for (var i=0; i < cb.length; ++i) {
+                            doDefault = cb[i].call(this);
+                            if (!doDefault)
+                                break;
+                        }
+                    }
+
+                    if (doDefault) {
+                        this.x = newX;
+                        this.y = newY;
+                        this.h = newH;
+                        this.v = newV;
+                    }
                 }
             }
     };

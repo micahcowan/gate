@@ -10,7 +10,8 @@
 
     var G = MajicGame;
     var U = MajicUnits;
-    var B = MajicGame.behavior;
+    var Bh = MajicGame.behavior;
+    var GABh = GateArena.behavior;
 
     sprites.background = new GA.Background();
 
@@ -19,15 +20,15 @@
       , hitPoints: 3
 
       , behavior: [
-            B.momentum
-          , B.rotateKeys(
+            Bh.momentum
+          , Bh.rotateKeys(
                 {
                     clock:   [ 'd', 'ArrowRight' ]
                   , counter: [ 'a', 'ArrowLeft' ]
                 }
               , U.radians( Math.PI ).per.second
             )
-          , B.thrustKeys(
+          , Bh.thrustKeys(
                 {
                     forward: [ 'w', 'ArrowUp' ]
                   , back:    [ 's', 'ArrowDown' ]
@@ -36,19 +37,25 @@
                 }
               , U.pixels( 300 ).per.second.per.second
             )
-          , GA.behavior.playerBullet({
+          , GABh.playerBullet({
                 trigger:        'Space'
 
               , speed:          U.pixels( 300 ).per.second
               , color:          'red'
-              , onBounce:       GA.soundPlayer('knock'),
+              , onBounce:       [
+                    GA.maybeLockGate
+                  , GA.soundPlayer('knock')
+                ]
             })
-          , B.friction(  U.pixels( 100 ).per.second.per.second  )
-          , B.speedLimited( U.pixels( 240 ).per.second )
-          , B.bouncingBounds(
+          , Bh.friction(  U.pixels( 100 ).per.second.per.second  )
+          , Bh.speedLimited( U.pixels( 240 ).per.second )
+          , Bh.bouncingBounds(
                   GA.game.width, GA.game.height,
                   // Play "clink" when we bounce off a wall
-                  GA.soundPlayer('bounce')
+                  [
+                      GA.maybeTeleportGate
+                    , GA.soundPlayer('bounce')
+                  ]
             )
         ]
 
@@ -63,9 +70,9 @@
       , recallRadius: U.pixels( 7 )
       , firingTime: U.seconds( 1/3 )
       , behavior: [
-            GA.behavior.bulletFiredBehavior
-          , GA.behavior.bulletBoundsRecall( GA.game.width, GA.game.height )
-          , GA.behavior.bulletRecallBehavior({
+            GABh.bulletFiredBehavior
+          , GABh.bulletBoundsRecall( GA.game.width, GA.game.height )
+          , GABh.bulletRecallBehavior({
                 onSlurp: GA.soundPlayer('slurp')
             })
         ]
@@ -73,14 +80,14 @@
             this.owner = owner;
             this.mergeData( data );
         }
-    }, GA.bulletProtoClass // prototype to provide .fire() and other methods.
+    }, GA.BulletProtoClass // prototype to provide .fire() and other methods.
     );
 
     sprites.Gate = MajicGame.makeSpriteClass({
         size: U.pixels( 64 )
       , draw: GA.art.drawGate
-      , open: true // XXX
-    });
+      , open: false
+    }, GA.GateProtoClass);
 
     return sprites;
     }; // end setupSprites()
