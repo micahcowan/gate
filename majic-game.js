@@ -335,6 +335,9 @@ var MajicGame = (function() {
       , boundedLanceWandering:
             function( l, t, w, h ) {
                 var behavior = function(delta) {
+                    this.h = this.speed.mul( Math.sin(this.dir) );
+                    this.v = this.speed.mul( Math.cos(this.dir) );
+
                     // XXX for now, just coast
                     this.x = this.x.add( this.h.mul( delta ) );
                     this.y = this.y.add( this.v.mul( delta ) );

@@ -18,9 +18,9 @@ window.addEventListener('load', function() {
         G.removeEventListener('click', newGame);
         var S = GA.state = {};
         S.player = new Sp.Player(G.center);
-        S.gates = new GA.GateGroup();
-        S.bullets = [];
         S.enemies = new GA.EnemyGroup();
+        S.bullets = [];
+        S.gates = new GA.GateGroup();
         G.resetSprites(
             Sp.background
           , S.gates

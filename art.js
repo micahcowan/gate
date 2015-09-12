@@ -198,12 +198,11 @@
     };
 
     GA.art.drawBaddie = function(scr) {
-        var scr = GG.screen;
         var baddie = this;
         var x = baddie.x.as( U.pixel );
         var y = baddie.y.as( U.pixel );
 
-        var hW = baddie.width.as( U.pixel ) / 2; // half of width
+        var hW = baddie.size.as( U.pixel ) / 2; // half of width
         var cRad = 8; // corners radii
 
         var alpha = 0.45;

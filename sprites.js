@@ -63,7 +63,7 @@
     });
 
     sprites.BasicBaddy = MajicGame.makeSpriteClass({
-        size: 32
+        size: U.pixels( 32 )
       , speed: U.pixels( 70 ).per.second
 
       , minWaitChDir: U.seconds( 3 )

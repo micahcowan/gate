@@ -83,19 +83,7 @@
             }
         }
 
-        // XXX open some gates opposing, some not
-        var toggle = true;
-        for (var i=0; i < NUM_WALLS; i++) {
-            var wall = this[i];
-            for (var j=0; j != wall.length; ++j) {
-                var open;
-                if (i % 3 == 0)
-                    open = (toggle = !toggle);
-                else
-                    open = true;
-                wall[j].open = open;
-            }
-        }
+        this.wallOfEnemies();
     };
     GA.GateGroupProtoClass = function() {
         this.getCollidingGate = function(obj) {
@@ -106,6 +94,10 @@
                 if (gate) return gate;
             }
             return;
+        };
+        this.wallOfEnemies = function() {
+            var wallNum = Math.floor( Math.random() * this.length );
+            this[wallNum].wallOfEnemies();
         };
     };
     GA.GateGroupProtoClass.prototype = [];
@@ -142,6 +134,16 @@
             }
             return;
         };
+        this.wallOfEnemies = function() {
+            if (GA.state.enemies.length != 0)
+                throw "wallOfEnemies called, but enemies are already present.";
+
+            createjs.Sound.play('spawn');
+            for (var i=0; i < this.length; ++i) {
+                this[i].spawnBaddy();
+                this[i].open = true;
+            }
+        };
     };
     GA.GateWallProtoClass.prototype = [];
     GA.GateWall.prototype = new GA.GateWallProtoClass;
@@ -158,7 +160,42 @@
         };
         this.lock = function() {
             this.locked = true;
-        }
+        };
+        this.spawnBaddy = function() {
+            var enemies = GA.state.enemies;
+            // Initial velocity is "out the gate".
+            // We calculate the direction, "towards the center",
+            // and then normalize it to exactly one of the four
+            // basic compass points.
+            //
+            // (North is represented twice, so we can find "near"
+            // when it's either close to 0, or close to 2 * PI.)
+            var compass = [0,1,2,3,4].map(function(x) { return x * Math.PI/2; });
+            var dir = Math.atan2(GA.game.width/2 - this.x.as( U.pixels ),
+                                 GA.game.height/2 - this.y.as( U.pixels ));
+            if (dir < 0) {
+                dir = Math.PI * 2 + dir;
+            }
+            var dists = compass.map(function(x) {
+                return Math.abs(x - dir);
+            });
+            var minIdx = 0;
+            var min = dists[0];
+            for (var i=1; i != dists.length; ++i) {
+                if (dists[i] < dists[minIdx]) {
+                    minIdx = i;
+                    min = dists[i];
+                }
+            }
+            dir = compass[minIdx];
+            var data = {
+                x: this.x
+              , y: this.y
+              , dir: dir
+              , desiredDir: dir
+            };
+            enemies.push( new GA.sprites.BasicBaddy(data) );
+        };
     };
 
     GA.Background = function() {
