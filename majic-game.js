@@ -270,15 +270,15 @@ var MajicGame = (function() {
                 };
             }
       , bouncingBounds:
-            function(left, top, width, height, cb) {
+            function(left, top, right, bottom, cb) {
                 return function(delta) {
                     var bouncing = false;
                     var x = this.x.as( U.pixel );
                     var y = this.y.as( U.pixel );
                     var l = left.as( U.pixel );
                     var t = top.as( U.pixel );
-                    var r = left.add( width ).as( U.pixel );
-                    var b = top.add( height ).as( U.pixel );
+                    var r = right.as( U.pixel );
+                    var b = bottom.as( U.pixel );
                     var newX = this.x;
                     var newY = this.y;
                     var newH = this.h;
@@ -333,11 +333,11 @@ var MajicGame = (function() {
                 }
             }
       , boundedLanceWandering:
-            function( l, t, w, h ) {
+            function( l, t, r, b ) {
                 var behavior = [
                     MajicGame.behavior.dirAndSpeedToVelocity
                   , MajicGame.behavior.momentum
-                  , MajicGame.behavior.boundedLanceDirectionality(l, t, w, h)
+                  , MajicGame.behavior.boundedLanceDirectionality(l, t, r, b)
                 ];
                 return behavior;
             }
@@ -348,7 +348,7 @@ var MajicGame = (function() {
                 this.v = this.speed.mul( Math.cos(dir) );
             }
       , boundedLanceDirectionality:
-            function(left, topp, width, height) {
+            function(left, top, right, bottom) {
                 return function() {
                     // Redirect our direction whenever the "lance" hits a
                     // wall.
@@ -358,8 +358,8 @@ var MajicGame = (function() {
                     var dir = this.dir.as( U.radians );
                     var bxy = [ xy[0] + lance * Math.sin(dir), xy[1] + lance * Math.cos(dir) ];
                     var bounds = [
-                        [ left, left + width ]
-                      , [ topp, topp + height ]
+                        [ left, right ]
+                      , [ top, bottom ]
                     ];
                     var t, u, e;
                     var pm;

@@ -62,8 +62,11 @@
       , draw: GA.art.drawPlayer
     });
 
+    var baddySize = U.pixels( 32 );
+    var halfSize = baddySize.as( U.pixels ) / 2;
+
     sprites.BasicBaddy = MajicGame.makeSpriteClass({
-        size: U.pixels( 32 )
+        size: baddySize
       , speed: U.pixels( 70 ).per.second
 
       , minWaitChDir: U.seconds( 3 )
@@ -77,8 +80,8 @@
 
       , behavior: [
             Bh.boundedLanceWandering(
-                0, 0,
-                GA.game.width, GA.game.height
+                halfSize, halfSize,
+                GA.game.width - halfSize, GA.game.height - halfSize
             )
         ]
 
