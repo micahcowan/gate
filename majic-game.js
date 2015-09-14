@@ -334,15 +334,113 @@ var MajicGame = (function() {
             }
       , boundedLanceWandering:
             function( l, t, w, h ) {
-                var behavior = function(delta) {
-                    this.h = this.speed.mul( Math.sin(this.dir) );
-                    this.v = this.speed.mul( Math.cos(this.dir) );
-
-                    // XXX for now, just coast
-                    this.x = this.x.add( this.h.mul( delta ) );
-                    this.y = this.y.add( this.v.mul( delta ) );
-                };
+                var behavior = [
+                    MajicGame.behavior.dirAndSpeedToVelocity
+                  , MajicGame.behavior.momentum
+                  , MajicGame.behavior.boundedLanceDirectionality(l, t, w, h)
+                ];
                 return behavior;
+            }
+      , dirAndSpeedToVelocity:
+            function() {
+                var dir = this.dir.as( U.radians );
+                this.h = this.speed.mul( Math.sin(dir) );
+                this.v = this.speed.mul( Math.cos(dir) );
+            }
+      , boundedLanceDirectionality:
+            function(left, topp, width, height) {
+                return function() {
+                    // Redirect our direction whenever the "lance" hits a
+                    // wall.
+
+                    var xy = [ this.x.as( U.pixels ), this.y.as( U.pixels ) ];
+                    var lance = this.lanceSize.as( U.pixels );
+                    var dir = this.dir.as( U.radians );
+                    var bxy = [ xy[0] + lance * Math.sin(dir), xy[1] + lance * Math.cos(dir) ];
+                    var bounds = [
+                        [ left, left + width ]
+                      , [ topp, topp + height ]
+                    ];
+                    var t, u, e;
+                    var pm;
+                    var poss;
+                    var dirs, dists;
+                    var diff;
+
+                    if (bxy[0] < bounds[0][0] || bxy[0] > bounds[0][1]) {
+                        t = 0;
+                        u = 1;
+                        e = bxy[0] < bounds[0][0]? bounds[0][0] : bounds[0][1];
+                        if (bxy[1] < bounds[1][0] || bxy[1] > bounds[1][1]) {
+                            // We've just driven the lance into a corner.
+                            // If the lance line is mainly pointing
+                            // vertically, slide horizontally.
+                            if (Math.abs(bxy[1] - xy[1])
+                                > Math.abs(bxy[0] - xy[0])) {
+
+                                t = 1;
+                                u = 0;
+                                e = bxy[1] < bounds[1][0]? bounds[1][0]
+                                    : bounds[1][1];
+                            }
+                        }
+                    }
+                    else if (bxy[1] < bounds[1][0] || bxy[1] > bounds[1][1]) {
+                        t = 1;
+                        u = 0;
+                        e = bxy[1] < bounds[1][0]? bounds[1][0] : bounds[1][1];
+                    }
+                    else {
+                        // No bounds exceeded, nothing to adjust.
+                        return;
+                    }
+
+                    // lance must remain a constant distance from baddie,
+                    // and inside the game area. We know where the new
+                    // bxy[t] position is: it's at whatever wall we touched. Now we
+                    // need good ol' Pythaggy to tell us where new bxy[u] is.
+                    //
+                    // (xy[t] - e)^2 + (xy[u] - bxy[u])^2 = this.lance^2
+                    // xy[u] - bxy[u] = +/- sqrt( this.lance^2 - (xy[t] - e)^2 )
+                    // - bxy[u] = +/- sqrt( this.lance^2 - (xy[t] - e)^2 ) - xy[u]
+                    // bxy[u] = xy[u] +/- sqrt( this.lance^2 - (xy[t] - e)^2 )
+                    pm = Math.sqrt((lance * lance) - (xy[t] - e) * (xy[t] - e));
+                    poss = [xy[u] - pm, xy[u] + pm];
+
+                    // Okay, so which of the +/- branch should we choose?
+                    // First, if one of them turns out to be out of bounds,
+                    // then it's ruled out.
+                    if (poss[0] < bounds[u][0])
+                        poss.splice(0, 1);
+                    else if (poss[1] > bounds[u][1])
+                        poss.splice(1, 1);
+
+                    dirs = poss.map(function (x) {
+                        return t == 0? Math.atan2(e - xy[t], x - xy[u])
+                                     : Math.atan2(x - xy[u], e - xy[t]);
+                    });
+
+                    if (dirs.length > 1) {
+                        // Okay, next, choose whichever branch brings us to
+                        // the closest direction to the current one.
+                        dists = dirs.map(function (x) {
+                            return Math.abs(U.diffRadians(dir, x));
+                        });
+
+                        diff = dists[0] - dists[1];
+                        if (Math.abs(diff) < 0.0001) {
+                            // Both are equal; just pick one randomly.
+                            dir = dirs[ Math.floor( 2 * Math.random() ) ];
+                        }
+                        else {
+                            dir = dirs[ diff > 0? 1 : 0 ];
+                        }
+                    }
+                    else {
+                        dir = dirs[0];
+                    }
+                    this.dir = U.radians( dir );
+                };
             }
     };
 

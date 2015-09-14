@@ -187,7 +187,7 @@
                     min = dists[i];
                 }
             }
-            dir = compass[minIdx];
+            dir = U.radians( compass[minIdx] );
             var data = {
                 x: this.x
               , y: this.y

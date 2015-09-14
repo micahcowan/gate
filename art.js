@@ -252,9 +252,9 @@
 
         // Arc to desiredDir
         scr.beginPath();
-        var desiredDir = baddie.desiredDir;
+        var desiredDir = baddie.desiredDir.as( U.radians );
         var adj = Math.PI / 2;
-        var diff = GA.diffRadians(desiredDir, dir)
+        var diff = U.diffRadians(baddie.desiredDir, baddie.dir);
         scr.arc(x, y, 40, -dir + adj, -desiredDir + adj, diff > 0);
         scr.lineWidth = 2;
         scr.strokeStyle = 'magenta';
