@@ -478,18 +478,31 @@ var MajicUnits = (function() {
         // Add properties to top-level object's prototype.
         // This creates methods such as .seconds(N) and .second, to
         // generate values of that unit type.
-        var um;
+        var um, umm;
         if (baseUnit) {
             type.equiv = baseUnit;
-            um = unitMaker(baseUnit);
+            umm = unitMaker.bind(undefined, baseUnit);
         } else {
-            um = unitMaker(label);
+            umm = unitMaker.bind(undefined, label);
         }
+        um = umm();
         UnitsTopProto[plural] = um;
         // .second property access is exactly the same as calling
         // .seconds(1).
         Object.defineProperty(UnitsTopProto, label, {
             get: function() { return um(1); }
+        });
+        Object.defineProperty(UnitsTopProto, plural, {
+            get: function() {
+                var uval = this;
+                var ret = umm();
+                Object.defineProperty(ret, 'per', {
+                    get: function() {
+                        return new UnitPer(um(1));
+                    }
+                });
+                return ret;
+            }
         });
 
         // Add properties to .per
@@ -506,6 +519,22 @@ var MajicUnits = (function() {
                      return this[plural](1);
                  }
         });
+    };
+
+    UnitsTopProto.diffRadians = function(a, b) {
+        // Return the diff between a and b, with an absolute value < pi,
+        // (allowing negative). Return is NOT a UnitValue, which would
+        // disallow negative results.
+        if (!(a instanceof UnitValue))
+            a = U.radians( a );
+        if (!(b instanceof UnitValue))
+            b = U.radians( b );
+        var diff = a.as( U.radians ) - b.as( U.radians );
+        if (diff < -Math.PI)
+            diff = diff + 2 * Math.PI;
+        else if (diff > Math.PI)
+            diff = diff - 2 * Math.PI;
+        return diff;
     };
 
     // Now that the machinery's all in place, let's define our units of
